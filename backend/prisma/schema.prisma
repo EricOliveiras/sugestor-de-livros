@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?
+  googleId  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RELAÇÃO: Adicione este campo para conectar o usuário aos seus livros salvos
+  savedBooks Book[]
+}
+
+// NOVO MODELO: Adicione todo este bloco para a tabela de Livros
+model Book {
+  id            String @id @default(cuid())
+  // Este é o ID que vem da API do Google, para não salvarmos duplicatas
+  googleBooksId String @unique
+  title         String
+  // O autor pode ser uma lista, então armazenamos como String
+  authors       String
+  synopsis      String
+  coverUrl      String
+
+  // RELAÇÃO: Lista de usuários que salvaram este livro
+  savedBy User[]
+}
