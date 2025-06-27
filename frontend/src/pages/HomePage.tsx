@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   getSuggestion,
   saveBook,
@@ -11,7 +11,6 @@ import {
   Flex,
   Heading,
   Image,
-  Spinner,
   Text,
   VStack,
   Alert,
@@ -22,7 +21,6 @@ import {
   ModalContent,
   ModalCloseButton,
   ModalBody,
-  ModalFooter,
   useDisclosure,
   Grid,
   GridItem,
