@@ -1,32 +1,51 @@
 import React, { useState } from "react";
-import { Box, Image, Text, VStack, Heading, Button } from "@chakra-ui/react";
+import {
+  Box,
+  Image,
+  Text,
+  VStack,
+  Heading,
+  Button,
+  Flex,
+  Spacer,
+  HStack,
+  Icon,
+} from "@chakra-ui/react";
+import { StarIcon } from "@chakra-ui/icons"; // Importamos o ícone de estrela do Chakra
 import type { Book } from "../services/bookService";
 
-// O Card agora recebe uma função 'onRemove'
 interface BookCardProps {
   book: Book;
   onRemove: (bookId: string) => Promise<void>;
+  onRate: (bookId: string, rating: number) => Promise<void>;
 }
 
-export const BookCard = ({ book, onRemove }: BookCardProps) => {
+export const BookCard = ({ book, onRemove, onRate }: BookCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  // Estado para controlar o efeito de hover nas estrelas
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const initialRating =
+    book.ratings && book.ratings.length > 0 ? book.ratings[0].value : 0;
+
+  const handleRating = (rate: number) => {
+    onRate(book.id, rate);
+  };
 
   const handleRemoveClick = async () => {
     setIsDeleting(true);
     await onRemove(book.id);
-    // O estado de isDeleting não precisa ser revertido, pois o componente sumirá
   };
 
   return (
-    <VStack
+    <Flex
+      direction="column"
       p={4}
       bg="white"
       boxShadow="md"
       borderRadius="lg"
       borderWidth="1px"
       borderColor="gray.200"
-      spacing={3}
-      align="stretch"
       h="100%"
     >
       <Image
@@ -34,18 +53,41 @@ export const BookCard = ({ book, onRemove }: BookCardProps) => {
         alt={`Capa do livro ${book.title}`}
         borderRadius="md"
         h="250px"
-        w="100%"
+        w="auto"
+        mx="auto"
         objectFit="contain"
       />
-      <VStack flex="1" spacing={1} align="stretch">
+
+      <Flex direction="column" flex="1" mt={4}>
         <Heading size="sm" noOfLines={2}>
           {book.title}
         </Heading>
-        <Text fontSize="sm" color="gray.600" noOfLines={1}>
+        <Text fontSize="sm" color="gray.600" noOfLines={1} mb={2}>
           {book.authors}
         </Text>
-      </VStack>
+
+        <Spacer />
+
+        {/* NOSSO COMPONENTE DE ESTRELAS CUSTOMIZADO */}
+        <HStack spacing={1} onMouseLeave={() => setHoverRating(0)}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Icon
+              key={star}
+              as={StarIcon}
+              boxSize={6}
+              color={
+                star <= (hoverRating || initialRating) ? "gold" : "gray.300"
+              }
+              cursor="pointer"
+              onMouseEnter={() => setHoverRating(star)}
+              onClick={() => handleRating(star)}
+            />
+          ))}
+        </HStack>
+      </Flex>
+
       <Button
+        mt={4}
         colorScheme="red"
         variant="outline"
         size="sm"
@@ -54,6 +96,6 @@ export const BookCard = ({ book, onRemove }: BookCardProps) => {
       >
         Remover
       </Button>
-    </VStack>
+    </Flex>
   );
 };

@@ -3,28 +3,23 @@ import React, {
   useState,
   useContext,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import {
   login as apiLogin,
   register as apiRegister,
+  type User,
 } from "../services/authService";
-
-// --- Interfaces para Tipagem ---
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  isLoading: boolean; // Para sabermos se a autenticação inicial está carregando
+  isLoading: boolean;
   login: (data: any) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
+  updateUserData: (newUserData: User) => void; // A NOVA FUNÇÃO
 }
 
 interface AuthProviderProps {
@@ -82,14 +77,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     localStorage.removeItem("user");
   };
 
+  const updateUserData = (newUserData: User) => {
+    setUser(newUserData);
+    localStorage.setItem("user", JSON.stringify(newUserData));
+  };
+
   const value = {
-    isAuthenticated: !!token, // Se existe token, está autenticado
+    isAuthenticated: !!token,
     user,
     token,
     isLoading,
     login,
     register,
     logout,
+    updateUserData, // Expondo a nova função
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

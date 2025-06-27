@@ -17,18 +17,22 @@ import {
   Alert,
   AlertIcon,
   useToast,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { QuestionOutlineIcon } from "@chakra-ui/icons";
-import { motion } from "framer-motion";
 import { Header } from "../components/Header";
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
 
 export const HomePage = () => {
   const toast = useToast();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [book, setBook] = useState<BookSuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +45,7 @@ export const HomePage = () => {
     try {
       const suggestedBook = await getSuggestion();
       setBook(suggestedBook);
+      onOpen();
     } catch (err: any) {
       setError("Não foi possível buscar uma sugestão. Tente novamente.");
     } finally {
@@ -50,7 +55,6 @@ export const HomePage = () => {
 
   const handleSaveBook = async () => {
     if (!book) return;
-
     setIsSaving(true);
     try {
       await saveBook(book);
@@ -62,11 +66,11 @@ export const HomePage = () => {
         isClosable: true,
         position: "top-right",
       });
+      onClose();
     } catch (err) {
       toast({
         title: "Erro ao Salvar",
-        description:
-          "Não foi possível salvar o livro. Você já pode ter salvo este livro.",
+        description: "Não foi possível salvar o livro.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -80,7 +84,6 @@ export const HomePage = () => {
   return (
     <Flex direction="column" minH="100vh">
       <Header />
-
       <Box
         as="main"
         bg="brand.cream"
@@ -91,91 +94,27 @@ export const HomePage = () => {
       >
         <Container maxW="container.md">
           <VStack spacing={8}>
-            {!isLoading && !book && !error && (
-              <Box
-                textAlign="center"
-                p={10}
-                bg="white"
-                borderRadius="lg"
-                boxShadow="md"
-              >
-                <VStack spacing={4}>
-                  <QuestionOutlineIcon w={12} h={12} color="brand.sage" />
-                  <Heading size="lg" color="brand.espresso">
-                    Encontre sua próxima leitura
-                  </Heading>
-                  <Text>Clique no botão abaixo para receber uma sugestão.</Text>
-                </VStack>
-              </Box>
-            )}
-
-            {book && (
-              <Box
-                as={motion.div}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                w="100%"
-              >
-                <Flex
-                  direction={{ base: "column", md: "row" }}
-                  p={6}
-                  borderWidth={1}
-                  borderRadius="lg"
-                  boxShadow="xl"
-                  bg="white"
-                  borderColor="gray.200"
-                >
-                  <Image
-                    src={book.coverUrl}
-                    alt={`Capa do livro ${book.title}`}
-                    borderRadius="md"
-                    boxSize={{ base: "150px", md: "200px" }}
-                    mx={{ base: "auto", md: "0" }}
-                    objectFit="contain"
-                    mr={{ md: 6 }}
-                    mb={{ base: 4, md: 0 }}
-                  />
-                  <Box flex="1">
-                    <Heading size="lg" color="brand.espresso">
-                      {book.title}
-                    </Heading>
-                    <Text fontSize="lg" color="gray.600" mt={1}>
-                      por {book.authors.join(", ")}
-                    </Text>
-                    <Text
-                      fontWeight="bold"
-                      mt={4}
-                      mb={2}
-                      color="brand.espresso"
-                    >
-                      Sinopse:
-                    </Text>
-                    <Text noOfLines={6}>{book.synopsis}</Text>
-                    <Button
-                      mt={4}
-                      colorScheme="green"
-                      onClick={handleSaveBook}
-                      isLoading={isSaving}
-                    >
-                      Salvar na minha lista
-                    </Button>
-                  </Box>
-                </Flex>
-              </Box>
-            )}
-
-            {isLoading && (
-              <Spinner size="xl" color="brand.sage" thickness="4px" />
-            )}
-
+            <Box
+              textAlign="center"
+              p={10}
+              bg="white"
+              borderRadius="lg"
+              boxShadow="md"
+            >
+              <VStack spacing={4}>
+                <QuestionOutlineIcon w={12} h={12} color="brand.sage" />
+                <Heading size="lg" color="brand.espresso">
+                  Encontre sua próxima leitura
+                </Heading>
+                <Text>Clique no botão abaixo para receber uma sugestão.</Text>
+              </VStack>
+            </Box>
             {error && (
               <Alert status="error" borderRadius="md">
                 <AlertIcon />
                 {error}
               </Alert>
             )}
-
             <Button
               onClick={handleGetSuggestion}
               isLoading={isLoading}
@@ -185,15 +124,69 @@ export const HomePage = () => {
               _hover={{ bgColor: "brand.olive" }}
               px={10}
               py={6}
-              mt={!book && !isLoading && !error ? 8 : 4}
+              mt={4}
             >
-              {!book
-                ? "Receber minha primeira sugestão!"
-                : "Quero outra sugestão"}
+              Me dê uma sugestão!
             </Button>
           </VStack>
         </Container>
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered>
+        <ModalOverlay />
+        <ModalContent borderRadius="lg" overflow="hidden">
+          <ModalCloseButton />
+          <ModalBody p={0}>
+            {book && (
+              <Grid templateColumns={{ base: "1fr", md: "30% 70%" }} w="100%">
+                {" "}
+                {/* ⬅️ REDUZIMOS A LARGURA DA IMAGEM PARA 30% */}
+                <GridItem>
+                  <Image
+                    src={book.coverUrl}
+                    alt={`Capa do livro ${book.title}`}
+                    w="100%"
+                    h="100%"
+                    objectFit="contain"
+                    maxH="400px" // Adicionamos uma altura máxima para evitar que fique muito grande
+                    mx="auto" // Centralizamos a imagem horizontalmente
+                  />
+                </GridItem>
+                <GridItem>
+                  <Flex direction="column" p={6} h="100%">
+                    <Heading as="h2" size="xl" color="brand.espresso">
+                      {book.title}
+                    </Heading>
+                    <Text fontSize="lg" color="gray.600" mt={2}>
+                      por {book.authors.join(", ")}
+                    </Text>
+                    <Box flex="1" mt={6}>
+                      <Heading size="md" mb={2} color="brand.espresso">
+                        Sinopse
+                      </Heading>
+                      <Text noOfLines={10}>{book.synopsis}</Text>
+                    </Box>
+                    <Flex justify="flex-end" mt={6}>
+                      <Button variant="ghost" mr={3} onClick={onClose}>
+                        Fechar
+                      </Button>
+                      <Button
+                        bgColor="brand.sage"
+                        color="white"
+                        _hover={{ bgColor: "brand.olive" }}
+                        onClick={handleSaveBook}
+                        isLoading={isSaving}
+                      >
+                        Salvar na minha lista
+                      </Button>
+                    </Flex>
+                  </Flex>
+                </GridItem>
+              </Grid>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };

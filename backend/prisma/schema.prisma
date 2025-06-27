@@ -8,29 +8,48 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String?
-  googleId  String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // RELAÇÃO: Adicione este campo para conectar o usuário aos seus livros salvos
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  password   String?
+  googleId   String?  @unique
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   savedBooks Book[]
+
+  // RELAÇÃO: Adicione este campo para as avaliações feitas pelo usuário
+  ratings Rating[]
 }
 
-// NOVO MODELO: Adicione todo este bloco para a tabela de Livros
 model Book {
   id            String @id @default(cuid())
-  // Este é o ID que vem da API do Google, para não salvarmos duplicatas
   googleBooksId String @unique
   title         String
-  // O autor pode ser uma lista, então armazenamos como String
   authors       String
   synopsis      String
   coverUrl      String
+  savedBy       User[]
 
-  // RELAÇÃO: Lista de usuários que salvaram este livro
-  savedBy User[]
+  // RELAÇÃO: Adicione este campo para as avaliações recebidas pelo livro
+  ratings Rating[]
+}
+
+// NOVO MODELO: Adicione todo este bloco para a tabela de Avaliações
+model Rating {
+  id        String   @id @default(cuid())
+  value     Int // A nota, de 1 a 5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Chaves estrangeiras para as relações
+  userId String
+  bookId String
+
+  // Relações
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  // A MÁGICA: Garante que a combinação de userId e bookId seja única
+  @@unique([userId, bookId])
 }

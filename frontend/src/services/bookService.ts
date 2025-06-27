@@ -1,5 +1,7 @@
 import api from "./api";
 
+// --- Interfaces para Tipagem ---
+
 export interface Book {
   id: string;
   googleBooksId: string;
@@ -7,8 +9,10 @@ export interface Book {
   authors: string;
   synopsis: string;
   coverUrl: string;
+  ratings: { value: number }[]; // Array de avaliações
 }
 
+// Representa o livro que usamos no estado do frontend da HomePage
 export interface BookSuggestion {
   googleBooksId: string;
   title: string;
@@ -17,11 +21,13 @@ export interface BookSuggestion {
   coverUrl: string;
 }
 
+// --- Funções de API ---
+
 export const getSuggestion = async (): Promise<BookSuggestion> => {
   const response = await api.get("/books/suggestion");
   return {
     ...response.data,
-    authors: response.data.authors ? response.data.authors.split(", ") : [],
+    authors: response.data.authors || [], // Correção que já fizemos
   };
 };
 
@@ -41,8 +47,12 @@ export const getSavedBooks = async (): Promise<Book[]> => {
   return response.data;
 };
 
-// ADICIONE ESTA NOVA FUNÇÃO
 export const removeBook = async (bookId: string) => {
   const response = await api.delete(`/me/books/${bookId}`);
+  return response.data;
+};
+
+export const rateBook = async (bookId: string, value: number) => {
+  const response = await api.post(`/books/${bookId}/rate`, { value });
   return response.data;
 };

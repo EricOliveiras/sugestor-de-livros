@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Button,
@@ -18,12 +17,16 @@ export const Header = () => {
     <Box as="header" bg="brand.sage" color="white" py={4} px={8} boxShadow="md">
       <Flex alignItems="center">
         <Heading size="md" as={RouterLink} to="/">
-          Sugestor de Livros
+          Oráculo Literário
         </Heading>
         <Spacer />
         <Flex alignItems="center">
           <ChakraLink as={RouterLink} to="/my-list" mr={6} fontWeight="bold">
             Minha Lista
+          </ChakraLink>
+          {/* ADICIONAMOS O LINK PARA CONFIGURAÇÕES */}
+          <ChakraLink as={RouterLink} to="/settings" mr={6} fontWeight="bold">
+            Configurações
           </ChakraLink>
           {user && <Text mr={4}>Olá, {user.name}!</Text>}
           <Button

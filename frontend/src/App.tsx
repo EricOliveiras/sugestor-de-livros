@@ -4,6 +4,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ReadingListPage } from "./pages/ReadingListPage";
+import { SettingsPage } from "./pages/SettingsPage"; // Importe a nova página
 
 function App() {
   return (
@@ -22,6 +23,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ReadingListPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* ADICIONAMOS A NOVA ROTA PROTEGIDA */}
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

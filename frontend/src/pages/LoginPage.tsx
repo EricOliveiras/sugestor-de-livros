@@ -16,7 +16,10 @@ import {
   Grid,
   GridItem,
   Flex,
+  Icon,
 } from "@chakra-ui/react";
+// 1. Importando um ícone de livro da nova biblioteca
+import { GiOpenBook } from "react-icons/gi";
 
 const imageUrl = "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f";
 
@@ -46,9 +49,11 @@ export const LoginPage = () => {
   };
 
   return (
-    // O Grid agora vai ocupar 100% da altura graças ao nosso estilo global
-    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} h="100%" w="100%">
-      {/* LADO ESQUERDO: IMAGEM */}
+    <Grid
+      templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+      h="100vh"
+      overflow="hidden"
+    >
       <GridItem
         w="100%"
         h="100%"
@@ -58,16 +63,23 @@ export const LoginPage = () => {
         display={{ base: "none", md: "block" }}
       />
 
-      {/* LADO DIREITO: FORMULÁRIO */}
       <GridItem w="100%" h="100%" bg="white">
-        {" "}
-        {/* 1. FUNDO BRANCO NA COLUNA INTEIRA */}
         <Flex align="center" justify="center" h="100%" direction="column" p={8}>
-          {/* 2. O Box interno não precisa mais de estilo de fundo ou sombra */}
           <Box width="100%" maxWidth="400px">
+            {/* 2. ADICIONAMOS A SEÇÃO DE IDENTIDADE VISUAL AQUI */}
+            <VStack spacing={2} mb={10} textAlign="center">
+              <Icon as={GiOpenBook} boxSize={12} color="brand.sage" />
+              <Heading as="h1" size="2xl" color="brand.espresso">
+                Oráculo Literário
+              </Heading>
+              <Text fontSize="lg" color="gray.600">
+                Descubra livros que você não sabia que amava.
+              </Text>
+            </VStack>
+
             <VStack spacing={6} as="form" onSubmit={handleSubmit}>
-              <Heading as="h1" size="xl" color="brand.espresso">
-                Bem-vindo de volta!
+              <Heading as="h2" size="lg" color="brand.espresso">
+                Login
               </Heading>
 
               <FormControl isRequired>

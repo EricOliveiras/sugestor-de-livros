@@ -3,6 +3,7 @@ import {
   getMySavedBooks,
   saveBookToList,
   removeBookFromList,
+  updateMyProfile, // Importamos a nova função
 } from "../controllers/meController";
 import { authMiddleware } from "../middleware/uthMiddleware";
 
@@ -10,14 +11,12 @@ const router = Router();
 
 router.use(authMiddleware);
 
-// GET /api/me/books
+// Rotas de livros salvos
 router.get("/books", getMySavedBooks);
-
-// POST /api/me/books
 router.post("/books", saveBookToList);
-
-// ADICIONE ESTA NOVA ROTA
-// O ':bookId' é um parâmetro dinâmico que receberemos na requisição
 router.delete("/books/:bookId", removeBookFromList);
+
+// PATCH /api/me/
+router.patch("/", updateMyProfile);
 
 export default router;

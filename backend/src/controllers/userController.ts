@@ -5,42 +5,58 @@ import jwt from "jsonwebtoken";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
+    // 1. NÃO esperamos mais o avatarUrl vindo do frontend
     const { email, password, name } = req.body;
 
-    // 1. Validação de entrada
     if (!email || !password || !name) {
       return res
         .status(400)
         .json({ message: "Nome, email e senha são obrigatórios." });
     }
 
-    // 2. Verificar se o usuário já existe no banco
+    const allowedDomains = [
+      "gmail.com",
+      "outlook.com",
+      "hotmail.com",
+      "yahoo.com",
+    ];
+    const emailDomain = email.split("@")[1];
+
+    if (!allowedDomains.includes(emailDomain)) {
+      return res.status(400).json({
+        message:
+          "Por favor, use um email de um provedor válido (Gmail, Outlook, etc.).",
+      });
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email: email },
     });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Este email já está em uso." }); // 409 Conflict
+      return res.status(409).json({ message: "Este email já está em uso." });
     }
 
-    // 3. Fazer o "hash" da senha para segurança
-    // O '10' é o "custo" do hash - um valor padrão e seguro.
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Criar o novo usuário no banco de dados
+    // 2. GERAMOS A URL DO AVATAR PADRÃO AQUI
+    // Usamos o nome do usuário como "semente" para o avatar
+    const defaultAvatarUrl = `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(
+      name || "User"
+    )}`;
+
+    // 3. Criar o novo usuário, agora com o avatarUrl padrão
     const user = await prisma.user.create({
       data: {
         email: email,
         name: name,
-        password: hashedPassword, // Salva a senha criptografada
+        password: hashedPassword,
+        avatarUrl: defaultAvatarUrl, // Salva a URL do avatar padrão
       },
     });
 
-    // 5. Retornar uma resposta de sucesso sem a senha
-    // NUNCA retorne a senha na resposta da API, mesmo a versão com hash.
     const { password: _, ...userWithoutPassword } = user;
-
-    return res.status(201).json(userWithoutPassword); // 201 Created
+    return res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error("Erro ao registrar usuário:", error);
     return res.status(500).json({ message: "Erro interno do servidor." });

@@ -54,11 +54,16 @@ export const getMySavedBooks = async (
   try {
     const userWithBooks = await prisma.user.findUnique({
       where: { id: userId },
-      // O 'include' é a mágica do Prisma que traz os livros relacionados
+      // ESTA É A MUDANÇA: um 'include' dentro de outro
       include: {
         savedBooks: {
-          orderBy: {
-            title: "asc", // Ordena os livros por título
+          orderBy: { title: "asc" },
+          // Para cada livro salvo, inclua também as avaliações...
+          include: {
+            ratings: {
+              // ...mas apenas a avaliação que pertence ao usuário logado.
+              where: { userId: userId },
+            },
           },
         },
       },
@@ -68,6 +73,8 @@ export const getMySavedBooks = async (
       return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
+    // Agora cada livro dentro de 'savedBooks' terá um campo 'ratings'
+    // que será um array com 0 ou 1 avaliação (a do usuário atual).
     return res.status(200).json(userWithBooks.savedBooks);
   } catch (error) {
     console.error("Erro ao buscar livros salvos:", error);
@@ -106,5 +113,47 @@ export const removeBookFromList = async (
     return res
       .status(500)
       .json({ message: "Erro interno ao remover o livro." });
+  }
+};
+
+export const updateMyProfile = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  const userId = req.userId;
+  // Pegamos apenas o nome e o avatar do corpo da requisição
+  const { name, avatarUrl } = req.body;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Usuário não autenticado." });
+  }
+
+  // Criamos um objeto de dados apenas com os campos que foram enviados
+  const dataToUpdate: { name?: string; avatarUrl?: string } = {};
+  if (name) dataToUpdate.name = name;
+  if (avatarUrl) dataToUpdate.avatarUrl = avatarUrl;
+
+  // Verificamos se há algo para atualizar
+  if (Object.keys(dataToUpdate).length === 0) {
+    return res
+      .status(400)
+      .json({ message: "Nenhum dado fornecido para atualização." });
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: dataToUpdate,
+    });
+
+    // Removemos a senha do objeto antes de enviá-lo de volta
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return res.status(200).json(userWithoutPassword);
+  } catch (error) {
+    console.error("Erro ao atualizar perfil:", error);
+    return res
+      .status(500)
+      .json({ message: "Erro interno ao atualizar o perfil." });
   }
 };
