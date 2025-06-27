@@ -12,7 +12,14 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors());
+const corsOptions = {
+  // Substitua pela URL exata do seu site no Vercel
+  origin: "https://sugestor-de-livros.vercel.app",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Métodos permitidos
+  allowedHeaders: "Content-Type,Authorization", // Headers permitidos
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rotas da API
