@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=sugestor_user
+      - POSTGRES_PASSWORD=sugestor_password
+      - POSTGRES_DB=sugestor_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
