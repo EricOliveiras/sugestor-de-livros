@@ -1,20 +1,14 @@
 import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
-import { Header } from "../components/Header";
 
 export const PrivacyPolicyPage = () => {
   return (
     <Box>
-      <Header />
       <Container maxW="container.lg" py={10}>
         <VStack spacing={6} align="stretch">
           <Heading as="h1" size="xl">
             Política de Privacidade do Oráculo Literário
           </Heading>
           <Text>Última atualização: 27 de Junho de 2025</Text>
-          <Text fontStyle="italic" color="red.500">
-            Atenção: Este é um documento de exemplo e não possui validade legal.
-          </Text>
-
           <Heading as="h2" size="lg" mt={4}>
             1. Dados que Coletamos
           </Heading>
