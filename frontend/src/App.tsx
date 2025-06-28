@@ -5,56 +5,60 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ReadingListPage } from "./pages/ReadingListPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { TermsOfUsePage } from "./pages/TermsOfUsePage"; // Importamos a nova página
-import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage"; // Importamos a nova página
-import { MainLayout } from "./components/MainLayout"; // Importamos o novo Layout
+import { TermsOfUsePage } from "./pages/TermsOfUsePage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { ChangelogPage } from "./pages/ChangelogPage"; // Importe a nova página
+import { MainLayout } from "./components/MainLayout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rotas que usam o MainLayout */}
+        {/* Rotas que precisam de Header e Footer */}
         <Route
-          path="/"
           element={
-            <ProtectedRoute>
-              <MainLayout>
+            <MainLayout>
+              <Outlet />
+            </MainLayout>
+          }
+        >
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
                 <HomePage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-list"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-list"
+            element={
+              <ProtectedRoute>
                 <ReadingListPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
                 <SettingsPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
+        </Route>
 
-        {/* Rotas públicas que NÃO usam o MainLayout */}
+        {/* Rotas de Login/Cadastro que têm layout próprio */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
-        {/* Nossas novas rotas de conteúdo estático. Elas não precisam ser protegidas. */}
-        <Route path="/terms-of-use" element={<TermsOfUsePage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
+import { Outlet } from "react-router-dom";
 
 export default App;
