@@ -149,3 +149,59 @@ export const rateBook = async (req: AuthenticatedRequest, res: Response) => {
       .json({ message: "Erro interno ao processar a avaliação." });
   }
 };
+
+export const getFeaturedBooks = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
+      return res
+        .status(500)
+        .json({ message: "Erro de configuração do servidor." });
+    }
+
+    // Fazemos uma busca por um tema popular e relevante
+    const response = await axios.get(
+      "https://www.googleapis.com/books/v1/volumes",
+      {
+        params: {
+          q: "best sellers ficção brasileira",
+          maxResults: 10, // Pegamos 10 livros para o carrossel
+          printType: "books",
+          langRestrict: "pt-BR",
+          country: "BR",
+          key: apiKey,
+        },
+      }
+    );
+
+    const items = response.data.items;
+
+    if (!items || items.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Nenhum livro em destaque encontrado." });
+    }
+
+    // Usamos o mesmo filtro de qualidade para garantir que os livros têm os dados necessários
+    const validBooks = items.filter(
+      (item: BookVolume) =>
+        item.volumeInfo &&
+        item.volumeInfo.title &&
+        item.volumeInfo.authors &&
+        item.volumeInfo.imageLinks?.thumbnail
+    );
+
+    return res.status(200).json(validBooks);
+  } catch (error: any) {
+    console.error(
+      "ERRO ao buscar livros em destaque:",
+      error.response?.data?.error || error.message
+    );
+    return res
+      .status(500)
+      .json({ message: "Erro ao buscar livros em destaque." });
+  }
+};
