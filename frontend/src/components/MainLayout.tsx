@@ -11,7 +11,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <Flex direction="column" minH="100vh">
       <Header />
-      <Box as="main" flex="1" bg="brand.cream">
+      {/* Removemos o bg e o p daqui para que cada página controle seu estilo */}
+      <Box as="main" flex="1">
         {children}
       </Box>
       <Footer />
