@@ -22,4 +22,9 @@ const styles = {
   },
 };
 
-export const theme = extendTheme({ colors, styles });
+const fonts = {
+  heading: "'Lora', serif", // A fonte Lora será usada para todos os componentes <Heading>
+  body: "'Lato', sans-serif", // A fonte Lato será usada para todo o resto (<Text>, <Button>, etc.)
+};
+
+export const theme = extendTheme({ colors, styles, fonts });
