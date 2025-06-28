@@ -26,7 +26,6 @@ import {
   GridItem,
 } from "@chakra-ui/react";
 import { QuestionOutlineIcon } from "@chakra-ui/icons";
-import { Header } from "../components/Header";
 
 export const HomePage = () => {
   const toast = useToast();
@@ -80,16 +79,8 @@ export const HomePage = () => {
   };
 
   return (
-    <Flex direction="column" minH="100vh">
-      <Header />
-      <Box
-        as="main"
-        bg="brand.cream"
-        p={8}
-        flex="1"
-        display="flex"
-        alignItems="center"
-      >
+    <Flex direction="column" minH="100vh" bg={"brand.cream"}>
+      <Box as="main" p={8} flex="1" display="flex" alignItems="center">
         <Container maxW="container.md">
           <VStack spacing={8}>
             <Box

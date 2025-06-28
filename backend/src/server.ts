@@ -14,7 +14,7 @@ const port = process.env.PORT || 3001;
 
 const corsOptions = {
   // Substitua pela URL exata do seu site no Vercel
-  origin: "https://sugestor-de-livros.vercel.app",
+  origin: ["https://sugestor-de-livros.vercel.app", "http://localhost:5173"], // URLs permitidas
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Métodos permitidos
   allowedHeaders: "Content-Type,Authorization", // Headers permitidos
 };

@@ -7,10 +7,10 @@ const colors = {
     olive: "#c8c696",
     sage: "#97bea9",
     espresso: "#37260c",
+    footerBg: "#5C4033",
   },
 };
 
-// ADICIONE ESTA PARTE PARA OS ESTILOS GLOBAIS
 const styles = {
   global: {
     "html, body, #root": {
@@ -22,5 +22,4 @@ const styles = {
   },
 };
 
-// Passe o novo objeto de estilos para o extendTheme
 export const theme = extendTheme({ colors, styles });

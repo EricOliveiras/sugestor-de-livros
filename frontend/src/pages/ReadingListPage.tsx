@@ -91,48 +91,45 @@ export const ReadingListPage = () => {
   };
 
   return (
-    <Box bg="brand.cream" minH="100vh">
-      <Header />
-      <Container maxW="container.xl" py={8}>
-        <Heading as="h1" size="xl" color="brand.espresso" mb={8}>
-          Minha Lista de Leitura
-        </Heading>
+    <Container maxW="container.xl" py={8}>
+      <Heading as="h1" size="xl" color="brand.espresso" mb={8}>
+        Minha Lista de Leitura
+      </Heading>
 
-        {/* ... (código para isLoading, error, e lista vazia) ... */}
-        {isLoading && (
-          <Flex justify="center" align="center" h="50vh">
-            <Spinner size="xl" color="brand.sage" thickness="4px" />
-          </Flex>
-        )}
+      {/* ... (código para isLoading, error, e lista vazia) ... */}
+      {isLoading && (
+        <Flex justify="center" align="center" h="50vh">
+          <Spinner size="xl" color="brand.sage" thickness="4px" />
+        </Flex>
+      )}
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
 
-        {!isLoading && !error && books.length === 0 && (
-          <Text fontSize="lg" color="brand.espresso">
-            Sua lista está vazia. Volte para a página inicial e salve um livro
-            para começar!
-          </Text>
-        )}
+      {!isLoading && !error && books.length === 0 && (
+        <Text fontSize="lg" color="brand.espresso">
+          Sua lista está vazia. Volte para a página inicial e salve um livro
+          para começar!
+        </Text>
+      )}
 
-        {!isLoading && !error && books.length > 0 && (
-          <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} spacing={6}>
-            {books.map((book) => (
-              // Passamos a função de remover para o BookCard
-              <BookCard
-                key={book.id}
-                book={book}
-                onRemove={handleRemoveBook}
-                onRate={handleRateBook}
-              />
-            ))}
-          </SimpleGrid>
-        )}
-      </Container>
-    </Box>
+      {!isLoading && !error && books.length > 0 && (
+        <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} spacing={6}>
+          {books.map((book) => (
+            // Passamos a função de remover para o BookCard
+            <BookCard
+              key={book.id}
+              book={book}
+              onRemove={handleRemoveBook}
+              onRate={handleRateBook}
+            />
+          ))}
+        </SimpleGrid>
+      )}
+    </Container>
   );
 };
