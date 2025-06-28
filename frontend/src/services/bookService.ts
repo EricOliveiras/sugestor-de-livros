@@ -1,7 +1,5 @@
 import api from "./api";
 
-// --- Interfaces para Tipagem ---
-
 export interface Book {
   id: string;
   googleBooksId: string;
@@ -9,10 +7,9 @@ export interface Book {
   authors: string;
   synopsis: string;
   coverUrl: string;
-  ratings: { value: number }[]; // Array de avaliações
+  ratings: { value: number }[];
 }
 
-// Representa o livro que usamos no estado do frontend da HomePage
 export interface BookSuggestion {
   googleBooksId: string;
   title: string;
@@ -21,13 +18,12 @@ export interface BookSuggestion {
   coverUrl: string;
 }
 
-// --- Funções de API ---
-
+// SIMPLIFICAMOS ESTA FUNÇÃO: Ela não precisa mais de parâmetros
 export const getSuggestion = async (): Promise<BookSuggestion> => {
   const response = await api.get("/books/suggestion");
   return {
     ...response.data,
-    authors: response.data.authors || [], // Correção que já fizemos
+    authors: response.data.authors || [],
   };
 };
 
@@ -55,4 +51,18 @@ export const removeBook = async (bookId: string) => {
 export const rateBook = async (bookId: string, value: number) => {
   const response = await api.post(`/books/${bookId}/rate`, { value });
   return response.data;
+};
+
+export const getFeaturedBooks = async (): Promise<BookSuggestion[]> => {
+  const response = await api.get("/books/featured");
+  return response.data.map((item: any) => ({
+    googleBooksId: item.id,
+    title: item.volumeInfo.title,
+    authors: item.volumeInfo.authors || [],
+    synopsis: item.volumeInfo.description,
+    coverUrl: item.volumeInfo.imageLinks?.thumbnail.replace(
+      "http://",
+      "https://"
+    ),
+  }));
 };
