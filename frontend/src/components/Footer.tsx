@@ -5,13 +5,7 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    // Usamos a nova cor de fundo
     <Box as="footer" bg="brand.footerBg" color="brand.cream" py={4} px={8}>
-      {/* A MÁGICA DA RESPONSIVIDADE:
-        - direction: muda para 'column' em telas pequenas (base) e 'row' em telas maiores (md)
-        - alignItems: centraliza os itens quando está em modo coluna
-        - gap: adiciona um espaçamento entre os itens quando estão em modo coluna
-      */}
       <Flex
         direction={{ base: "column", md: "row" }}
         alignItems="center"
@@ -20,11 +14,17 @@ export const Footer = () => {
         <Text textAlign="center">
           &copy; {currentYear} Oráculo Literário. Todos os direitos reservados.
         </Text>
-
-        {/* O Spacer só é útil em telas grandes, mas não atrapalha no mobile */}
         <Spacer />
-
         <Flex>
+          {/* Adicionamos o novo link */}
+          <ChakraLink
+            as={RouterLink}
+            to="/changelog"
+            mr={4}
+            _hover={{ color: "white" }}
+          >
+            Novidades
+          </ChakraLink>
           <ChakraLink
             as={RouterLink}
             to="/terms-of-use"
