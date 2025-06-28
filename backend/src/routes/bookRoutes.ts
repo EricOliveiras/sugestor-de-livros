@@ -1,8 +1,14 @@
 import { Router } from "express";
-import { getBookSuggestion, rateBook } from "../controllers/bookController";
+import {
+  getBookSuggestion,
+  getFeaturedBooks,
+  rateBook,
+} from "../controllers/bookController";
 import { authMiddleware } from "../middleware/uthMiddleware";
 
 const router = Router();
+
+router.get("/featured", authMiddleware, getFeaturedBooks);
 
 router.get("/suggestion", authMiddleware, getBookSuggestion);
 
