@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 

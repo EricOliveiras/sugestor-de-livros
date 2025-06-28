@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
   Container,
   Heading,
   SimpleGrid,
@@ -18,7 +17,6 @@ import {
   type Book,
 } from "../services/bookService";
 import { BookCard } from "../components/BookCard";
-import { Header } from "../components/Header";
 
 export const ReadingListPage = () => {
   const [books, setBooks] = useState<Book[]>([]);

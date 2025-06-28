@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Box,
   Container,
   Heading,
   VStack,
@@ -13,7 +12,6 @@ import {
   Flex, // Importamos Flex
 } from "@chakra-ui/react";
 import { useAuth } from "../contexts/AuthContext";
-import { Header } from "../components/Header";
 import { updateProfile } from "../services/userService";
 
 export const SettingsPage = () => {
