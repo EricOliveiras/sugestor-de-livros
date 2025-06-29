@@ -1,29 +1,21 @@
-import { Context, Next } from "hono";
+import { MiddlewareHandler, Next } from "hono";
 import { verify } from "hono/jwt";
 
-export const authMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("authorization");
-
-  if (!authHeader) {
-    return c.json({ message: "Token não fornecido." }, 401);
+export const authMiddleware: MiddlewareHandler = async (c, next) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return c.json({ message: "Não autorizado." }, 401);
   }
 
-  const [bearer, token] = authHeader.split(" ");
-
-  if (bearer !== "Bearer" || !token) {
-    return c.json({ message: "Token mal formatado." }, 401);
-  }
+  const token = authHeader.split(" ")[1];
 
   try {
-    const secret = process.env.JWT_SECRET!;
-    const decodedPayload = await verify(token, secret);
-
-    // Em vez de req.userId, definimos uma variável no contexto do Hono
-    c.set("userId", decodedPayload.userId);
-
-    // Passa para a próxima função
+    const secret = c.env.JWT_SECRET as string; // ou uma constante
+    const payload = await verify(token, secret) as { userId: string };
+    c.set("userId", payload.userId);
     await next();
-  } catch (error) {
+  } catch (err) {
+    console.error("Token inválido:", err);
     return c.json({ message: "Token inválido ou expirado." }, 401);
   }
 };
