@@ -1,5 +1,17 @@
 import { Context } from "hono";
 import { User, Book, Rating } from "@prisma/client";
+import { createPrismaClient } from "../lib/prisma";
+
+type AppEnv = {
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    GOOGLE_BOOKS_API_KEY: string;
+  };
+  Variables: {
+    prisma: ReturnType<typeof createPrismaClient>;
+  };
+};
 
 // 2. CRIAMOS NOSSO TIPO EXPLÍCITO E COMPLETO
 // Um usuário que INCLUI uma lista de livros, onde cada livro INCLUI uma lista de ratings.
@@ -10,10 +22,11 @@ type UserWithSavedBooks = User & {
 };
 
 // Função para SALVAR um livro na lista do usuário
-export const saveBookToList = async (c: Context) => {
+export const saveBookToList = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
-    const userId = c.get("userId"); // Pegamos o userId do contexto
+    const jwtPayload = c.get("jwtPayload");
+    const userId = jwtPayload?.userId; // Pegamos o userId do payload do JWT
     const { googleBooksId, title, authors, synopsis, coverUrl } =
       await c.req.json(); // Pegamos o corpo da requisição
 
@@ -44,10 +57,11 @@ export const saveBookToList = async (c: Context) => {
 };
 
 // Função para BUSCAR a lista de livros do usuário
-export const getMySavedBooks = async (c: Context) => {
+export const getMySavedBooks = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
-    const userId = c.get("userId");
+    const jwtPayload = c.get("jwtPayload");
+    const userId = jwtPayload?.userId;
 
     if (!userId) {
       return c.json({ message: "Usuário não autenticado." }, 401);
@@ -81,10 +95,11 @@ export const getMySavedBooks = async (c: Context) => {
 };
 
 // Função para REMOVER um livro da lista
-export const removeBookFromList = async (c: Context) => {
+export const removeBookFromList = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
-    const userId = c.get("userId");
+    const jwtPayload = c.get("jwtPayload");
+    const userId = jwtPayload?.userId;
     const bookId = c.req.param("bookId"); // Pegamos o parâmetro da URL
 
     if (!userId) {
@@ -108,10 +123,11 @@ export const removeBookFromList = async (c: Context) => {
 };
 
 // Função para ATUALIZAR o perfil do usuário
-export const updateMyProfile = async (c: Context) => {
+export const updateMyProfile = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
-    const userId = c.get("userId");
+    const jwtPayload = c.get("jwtPayload");
+    const userId = jwtPayload?.userId;
     const { name, avatarUrl } = await c.req.json();
 
     if (!userId) {

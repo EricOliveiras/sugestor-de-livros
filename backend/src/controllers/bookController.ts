@@ -1,5 +1,15 @@
 import { Context } from "hono";
 import axios from "axios";
+import { createPrismaClient } from "../lib/prisma";
+
+type AppEnv = {
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    GOOGLE_BOOKS_API_KEY: string;
+  };
+  Variables: { prisma: ReturnType<typeof createPrismaClient>; }; // Usamos 'any' aqui para simplicidade
+};
 
 // A interface não precisa mudar
 interface BookVolume {
@@ -15,9 +25,9 @@ interface BookVolume {
 }
 
 // A assinatura muda para (c: Context)
-export const getBookSuggestion = async (c: Context) => {
+export const getBookSuggestion = async (c: Context<AppEnv>) => {
   try {
-    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const apiKey = c.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
       return c.json(
         { message: "Erro de configuração do servidor: Chave da API ausente." },
@@ -122,13 +132,14 @@ export const getBookSuggestion = async (c: Context) => {
   }
 };
 
-export const rateBook = async (c: Context) => {
+export const rateBook = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
-    const userId = c.get("userId"); // req.userId vira c.get('userId')
+    // Supondo que seu middleware JWT armazene o payload em 'jwtPayload'
+    const jwtPayload = c.get("jwtPayload");
+    const userId = jwtPayload?.userId;
     const bookId = c.req.param("bookId"); // req.params vira c.req.param()
     const { value } = await c.req.json(); // req.body vira await c.req.json()
-
     if (!userId) {
       return c.json({ message: "Usuário não autenticado." }, 401);
     }
@@ -153,9 +164,9 @@ export const rateBook = async (c: Context) => {
   }
 };
 
-export const getFeaturedBooks = async (c: Context) => {
+export const getFeaturedBooks = async (c: Context<AppEnv>) => {
   try {
-    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const apiKey = c.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
       return c.json({ message: "Erro de configuração do servidor." }, 500);
     }

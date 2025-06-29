@@ -2,7 +2,17 @@ import { Context } from "hono";
 import { hash, compare } from "bcrypt-ts";
 import { sign } from "hono/jwt";
 
-export const registerUser = async (c: Context) => {
+type AppEnv = {
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+  };
+  Variables: {
+    prisma: any; // Replace 'any' with your actual PrismaClient type if available
+  };
+};
+
+export const registerUser = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
     const { email, password, name } = await c.req.json();
@@ -79,7 +89,7 @@ export const registerUser = async (c: Context) => {
   }
 };
 
-export const loginUser = async (c: Context) => {
+export const loginUser = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
     const { email, password } = await c.req.json();
