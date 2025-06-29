@@ -2,8 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createPrismaClient } from "./lib/prisma";
 
-// Importamos TODOS os controllers e o middleware
-
+// Importamos TODOS os controllers
 import { loginUser, registerUser } from "./controllers/userController";
 import {
   getBookSuggestion,
@@ -18,7 +17,7 @@ import {
 } from "./controllers/meController";
 import { authMiddleware } from "./middleware/uthMiddleware";
 
-// Tipos para o Hono
+// Definimos os tipos para o ambiente e variáveis do Hono
 type AppEnv = {
   Bindings: {
     DATABASE_URL: string;
@@ -32,17 +31,21 @@ type AppEnv = {
 
 const app = new Hono<AppEnv>().basePath("/api");
 
-// --- Middlewares ---
+// --- Middlewares Globais ---
+
+// CORS
 app.use("*", cors({ origin: "https://oraculo-literario.vercel.app" }));
 
-// Middleware do Prisma para criar e anexar o cliente
+// Middleware do Prisma: Roda em todas as requisições
 app.use("*", async (c, next) => {
   try {
+    // Cria a instância do Prisma usando o 'env' da requisição atual
     const prisma = createPrismaClient(c.env);
+    // Anexa a instância ao contexto para os controllers usarem
     c.set("prisma", prisma);
     await next();
   } catch (error) {
-    console.error("ERRO CRÍTICO ao criar a instância do Prisma:", error);
+    console.error("ERRO CRÍTICO AO INICIALIZAR PRISMA:", error);
     return c.json(
       { message: "Falha na inicialização do serviço de banco de dados." },
       500
@@ -50,27 +53,26 @@ app.use("*", async (c, next) => {
   }
 });
 
-// --- Rotas Públicas (sem autenticação) ---
+// --- Rotas Públicas ---
 app.post("/users/register", registerUser);
 app.post("/users/login", loginUser);
 
-// --- Rotas Protegidas (com autenticação) ---
-// Criamos um grupo de rotas que usará o authMiddleware
+// --- Rotas Protegidas ---
 const protectedRoutes = new Hono<AppEnv>();
 protectedRoutes.use("*", authMiddleware);
 
-// Rotas de Livros
+// Livros
 protectedRoutes.get("/books/featured", getFeaturedBooks);
 protectedRoutes.get("/books/suggestion", getBookSuggestion);
 protectedRoutes.post("/books/:bookId/rate", rateBook);
 
-// Rotas do Usuário Logado ('/me')
+// Usuário ('me')
 protectedRoutes.get("/me/books", getMySavedBooks);
 protectedRoutes.post("/me/books", saveBookToList);
 protectedRoutes.delete("/me/books/:bookId", removeBookFromList);
 protectedRoutes.patch("/me", updateMyProfile);
 
-// Conectamos o grupo de rotas protegidas à aplicação principal
+// Aplicamos o grupo de rotas protegidas
 app.route("/", protectedRoutes);
 
 export default app;
