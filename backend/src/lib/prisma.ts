@@ -1,19 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-let prisma: PrismaClient;
+// Esta função define como nosso cliente Prisma é criado.
+// Ele SEMPRE será estendido com o Accelerate.
+const createPrismaClient = () => {
+  return new PrismaClient().$extends(withAccelerate());
+};
 
-if (process.env.NODE_ENV === "production") {
-  prisma = new PrismaClient();
-} else {
-  // A CORREÇÃO ESTÁ AQUI: Trocamos 'global' por 'globalThis'
-  const globalWithPrisma = globalThis as typeof globalThis & {
-    prisma?: PrismaClient;
-  };
+// Este padrão garante que, em desenvolvimento, não criamos uma nova conexão
+// a cada recarregamento, reutilizando a instância global.
+const globalForPrisma = globalThis as typeof globalThis & {
+  prisma: ReturnType<typeof createPrismaClient> | undefined;
+};
 
-  if (!globalWithPrisma.prisma) {
-    globalWithPrisma.prisma = new PrismaClient();
-  }
-  prisma = globalWithPrisma.prisma;
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+// Em ambiente de não-produção, guardamos a instância para reuso.
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
 }
-
-export { prisma };

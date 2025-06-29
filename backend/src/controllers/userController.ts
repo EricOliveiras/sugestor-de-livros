@@ -1,7 +1,7 @@
 import { Context } from "hono";
-import { prisma } from "../lib/prisma";
 import { hash, compare } from "bcrypt-ts";
 import { sign } from "hono/jwt";
+import { prisma } from "../lib/prisma";
 
 export const registerUser = async (c: Context) => {
   try {
