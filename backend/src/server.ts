@@ -1,10 +1,24 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createPrismaClient } from "./lib/prisma";
-import userRoutes from "./routes/userRoutes";
-import bookRoutes from "./routes/bookRoutes";
-import meRoutes from "./routes/meRoutes";
 
+// Importamos TODOS os controllers e o middleware
+
+import { loginUser, registerUser } from "./controllers/userController";
+import {
+  getBookSuggestion,
+  getFeaturedBooks,
+  rateBook,
+} from "./controllers/bookController";
+import {
+  getMySavedBooks,
+  removeBookFromList,
+  saveBookToList,
+  updateMyProfile,
+} from "./controllers/meController";
+import { authMiddleware } from "./middleware/uthMiddleware";
+
+// Tipos para o Hono
 type AppEnv = {
   Bindings: {
     DATABASE_URL: string;
@@ -16,52 +30,47 @@ type AppEnv = {
   };
 };
 
-const app = new Hono<AppEnv>();
+const app = new Hono<AppEnv>().basePath("/api");
 
-// Middleware do Prisma com LOGS DE DIAGNÓSTICO
+// --- Middlewares ---
+app.use("*", cors({ origin: "https://oraculo-literario.vercel.app" }));
+
+// Middleware do Prisma para criar e anexar o cliente
 app.use("*", async (c, next) => {
-  console.log("[server.ts] Entrando no middleware do Prisma.");
   try {
     const prisma = createPrismaClient(c.env);
     c.set("prisma", prisma);
-    console.log(
-      "[server.ts] Instância do Prisma parece ter sido criada e anexada ao contexto."
-    );
+    await next();
   } catch (error) {
-    console.error(
-      "[server.ts] ERRO CRÍTICO ao criar a instância do Prisma:",
-      error
-    );
-    // Se o erro acontecer aqui, a requisição para por aqui.
+    console.error("ERRO CRÍTICO ao criar a instância do Prisma:", error);
     return c.json(
       { message: "Falha na inicialização do serviço de banco de dados." },
       500
     );
   }
-
-  await next();
-  console.log(
-    "[server.ts] Saindo do middleware do Prisma (após a rota rodar)."
-  );
 });
 
-app.use(
-  "*",
-  cors({
-    origin: "https://oraculo-literario.vercel.app",
-    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  })
-);
-app.use("*", async (c, next) => {
-  console.log(`[LOG] Recebida Requisição: ${c.req.method} ${c.req.url}`);
-  await next();
-});
+// --- Rotas Públicas (sem autenticação) ---
+app.post("/users/register", registerUser);
+app.post("/users/login", loginUser);
 
-app.route("/users", userRoutes);
-app.route("/books", bookRoutes);
-app.route("/me", meRoutes);
+// --- Rotas Protegidas (com autenticação) ---
+// Criamos um grupo de rotas que usará o authMiddleware
+const protectedRoutes = new Hono<AppEnv>();
+protectedRoutes.use("*", authMiddleware);
 
-app.get("/", (c) => c.text("API do Oráculo Literário está no ar!"));
+// Rotas de Livros
+protectedRoutes.get("/books/featured", getFeaturedBooks);
+protectedRoutes.get("/books/suggestion", getBookSuggestion);
+protectedRoutes.post("/books/:bookId/rate", rateBook);
+
+// Rotas do Usuário Logado ('/me')
+protectedRoutes.get("/me/books", getMySavedBooks);
+protectedRoutes.post("/me/books", saveBookToList);
+protectedRoutes.delete("/me/books/:bookId", removeBookFromList);
+protectedRoutes.patch("/me", updateMyProfile);
+
+// Conectamos o grupo de rotas protegidas à aplicação principal
+app.route("/", protectedRoutes);
 
 export default app;
