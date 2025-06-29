@@ -1,38 +1,22 @@
 import { Context } from "hono";
-import { User, Book, Rating } from "@prisma/client";
-import { createPrismaClient } from "../lib/prisma";
 
+// O tipo AppEnv agora reflete que teremos 'prisma' e 'userId' no contexto.
 type AppEnv = {
-  Bindings: {
-    DATABASE_URL: string;
-    JWT_SECRET: string;
-    GOOGLE_BOOKS_API_KEY: string;
-  };
   Variables: {
-    prisma: ReturnType<typeof createPrismaClient>;
+    prisma: any; // Usamos 'any' para simplicidade
+    userId: string;
   };
-};
-
-// 2. CRIAMOS NOSSO TIPO EXPLÍCITO E COMPLETO
-// Um usuário que INCLUI uma lista de livros, onde cada livro INCLUI uma lista de ratings.
-type UserWithSavedBooks = User & {
-  savedBooks: (Book & {
-    ratings: Rating[];
-  })[];
 };
 
 // Função para SALVAR um livro na lista do usuário
 export const saveBookToList = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
-  try {
-    const jwtPayload = c.get("jwtPayload");
-    const userId = jwtPayload?.userId; // Pegamos o userId do payload do JWT
-    const { googleBooksId, title, authors, synopsis, coverUrl } =
-      await c.req.json(); // Pegamos o corpo da requisição
+  // CORREÇÃO: Pegamos o userId diretamente do contexto
+  const userId = c.get("userId");
 
-    if (!userId) {
-      return c.json({ message: "Usuário não autenticado." }, 401);
-    }
+  try {
+    const { googleBooksId, title, authors, synopsis, coverUrl } =
+      await c.req.json();
 
     const book = await prisma.book.upsert({
       where: { googleBooksId },
@@ -59,16 +43,11 @@ export const saveBookToList = async (c: Context<AppEnv>) => {
 // Função para BUSCAR a lista de livros do usuário
 export const getMySavedBooks = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
+  // CORREÇÃO: Pegamos o userId diretamente do contexto
+  const userId = c.get("userId");
+
   try {
-    const jwtPayload = c.get("jwtPayload");
-    const userId = jwtPayload?.userId;
-
-    if (!userId) {
-      return c.json({ message: "Usuário não autenticado." }, 401);
-    }
-
-    // 3. USAMOS NOSSO TIPO PARA GARANTIR QUE O TYPESCRIPT ENTENDA O RESULTADO
-    const userWithBooks = (await prisma.user.findUnique({
+    const userWithBooks = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         savedBooks: {
@@ -80,13 +59,12 @@ export const getMySavedBooks = async (c: Context<AppEnv>) => {
           },
         },
       },
-    })) as UserWithSavedBooks | null;
+    });
 
     if (!userWithBooks) {
       return c.json({ message: "Usuário não encontrado." }, 404);
     }
 
-    // Agora o TypeScript sabe que userWithBooks.savedBooks existe, e o erro desaparece.
     return c.json(userWithBooks.savedBooks, 200);
   } catch (error) {
     console.error("Erro ao buscar livros salvos:", error);
@@ -97,15 +75,11 @@ export const getMySavedBooks = async (c: Context<AppEnv>) => {
 // Função para REMOVER um livro da lista
 export const removeBookFromList = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
+  // CORREÇÃO: Pegamos o userId diretamente do contexto
+  const userId = c.get("userId");
+  const bookId = c.req.param("bookId");
+
   try {
-    const jwtPayload = c.get("jwtPayload");
-    const userId = jwtPayload?.userId;
-    const bookId = c.req.param("bookId"); // Pegamos o parâmetro da URL
-
-    if (!userId) {
-      return c.json({ message: "Usuário não autenticado." }, 401);
-    }
-
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -125,15 +99,11 @@ export const removeBookFromList = async (c: Context<AppEnv>) => {
 // Função para ATUALIZAR o perfil do usuário
 export const updateMyProfile = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
+  // CORREÇÃO: Pegamos o userId diretamente do contexto
+  const userId = c.get("userId");
+  const { name, avatarUrl } = await c.req.json();
+
   try {
-    const jwtPayload = c.get("jwtPayload");
-    const userId = jwtPayload?.userId;
-    const { name, avatarUrl } = await c.req.json();
-
-    if (!userId) {
-      return c.json({ message: "Usuário não autenticado." }, 401);
-    }
-
     const dataToUpdate: { name?: string; avatarUrl?: string } = {};
     if (name) dataToUpdate.name = name;
     if (avatarUrl) dataToUpdate.avatarUrl = avatarUrl;
@@ -151,7 +121,6 @@ export const updateMyProfile = async (c: Context<AppEnv>) => {
     });
 
     const { password, ...userWithoutPassword } = updatedUser;
-
     return c.json(userWithoutPassword, 200);
   } catch (error) {
     console.error("Erro ao atualizar perfil:", error);
