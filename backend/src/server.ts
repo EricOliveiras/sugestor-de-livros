@@ -32,16 +32,10 @@ type AppEnv = {
 const app = new Hono<AppEnv>().basePath("/api");
 
 // --- Middlewares Globais ---
-
-// CORS
 app.use("*", cors({ origin: "https://oraculo-literario.vercel.app" }));
-
-// Middleware do Prisma: Roda em todas as requisições
 app.use("*", async (c, next) => {
   try {
-    // Cria a instância do Prisma usando o 'env' da requisição atual
     const prisma = createPrismaClient(c.env);
-    // Anexa a instância ao contexto para os controllers usarem
     c.set("prisma", prisma);
     await next();
   } catch (error) {
@@ -53,26 +47,24 @@ app.use("*", async (c, next) => {
   }
 });
 
-// --- Rotas Públicas ---
+// --- Rotas Públicas (NÃO precisam de token) ---
 app.post("/users/register", registerUser);
 app.post("/users/login", loginUser);
+// A CORREÇÃO: Movemos a rota de 'featured' para a área pública
+app.get("/books/featured", getFeaturedBooks);
 
-// --- Rotas Protegidas ---
+// --- Rotas Protegidas (PRECISAM de token) ---
 const protectedRoutes = new Hono<AppEnv>();
 protectedRoutes.use("*", authMiddleware);
 
-// Livros
-protectedRoutes.get("/books/featured", getFeaturedBooks);
+// A rota de 'featured' foi REMOVIDA daqui.
 protectedRoutes.get("/books/suggestion", getBookSuggestion);
 protectedRoutes.post("/books/:bookId/rate", rateBook);
-
-// Usuário ('me')
 protectedRoutes.get("/me/books", getMySavedBooks);
 protectedRoutes.post("/me/books", saveBookToList);
 protectedRoutes.delete("/me/books/:bookId", removeBookFromList);
 protectedRoutes.patch("/me", updateMyProfile);
 
-// Aplicamos o grupo de rotas protegidas
 app.route("/", protectedRoutes);
 
 export default app;
