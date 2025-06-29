@@ -1,4 +1,9 @@
-node_modules
+# Ignora todas as pastas node_modules
+**/node_modules/*
+
+# MAS NÃO ignora a pasta do nosso Prisma Client
+!**/node_modules/.prisma/client
+
 # Keep environment variables out of version control
 .env
 
