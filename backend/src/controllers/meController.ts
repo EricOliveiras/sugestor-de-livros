@@ -1,5 +1,4 @@
 import { Context } from "hono";
-import { prisma } from "../lib/prisma";
 import { User, Book, Rating } from "@prisma/client";
 
 // 2. CRIAMOS NOSSO TIPO EXPLÍCITO E COMPLETO
@@ -12,6 +11,7 @@ type UserWithSavedBooks = User & {
 
 // Função para SALVAR um livro na lista do usuário
 export const saveBookToList = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const userId = c.get("userId"); // Pegamos o userId do contexto
     const { googleBooksId, title, authors, synopsis, coverUrl } =
@@ -44,8 +44,8 @@ export const saveBookToList = async (c: Context) => {
 };
 
 // Função para BUSCAR a lista de livros do usuário
-// Função para BUSCAR a lista de livros do usuário
 export const getMySavedBooks = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const userId = c.get("userId");
 
@@ -82,6 +82,7 @@ export const getMySavedBooks = async (c: Context) => {
 
 // Função para REMOVER um livro da lista
 export const removeBookFromList = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const userId = c.get("userId");
     const bookId = c.req.param("bookId"); // Pegamos o parâmetro da URL
@@ -108,6 +109,7 @@ export const removeBookFromList = async (c: Context) => {
 
 // Função para ATUALIZAR o perfil do usuário
 export const updateMyProfile = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const userId = c.get("userId");
     const { name, avatarUrl } = await c.req.json();

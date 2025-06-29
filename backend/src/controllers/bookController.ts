@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import axios from "axios";
-import { prisma } from "../lib/prisma";
 
 // A interface não precisa mudar
 interface BookVolume {
@@ -124,6 +123,7 @@ export const getBookSuggestion = async (c: Context) => {
 };
 
 export const rateBook = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const userId = c.get("userId"); // req.userId vira c.get('userId')
     const bookId = c.req.param("bookId"); // req.params vira c.req.param()

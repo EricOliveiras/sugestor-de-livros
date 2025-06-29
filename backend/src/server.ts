@@ -1,10 +1,32 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { createPrismaClient } from "./lib/prisma";
 import userRoutes from "./routes/userRoutes";
 import bookRoutes from "./routes/bookRoutes";
 import meRoutes from "./routes/meRoutes";
 
-const app = new Hono().basePath("/api");
+// Adicionamos os tipos para o nosso contexto Hono
+type AppEnv = {
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    GOOGLE_BOOKS_API_KEY: string;
+  };
+  Variables: {
+    prisma: ReturnType<typeof createPrismaClient>;
+  };
+};
+
+const app = new Hono<AppEnv>();
+
+// Middleware do Prisma: Roda em todas as requisições
+app.use("*", async (c, next) => {
+  // Cria uma instância do Prisma para esta requisição usando o 'env'
+  const prisma = createPrismaClient(c.env);
+  // Anexa ao contexto para que os controllers possam usá-la
+  c.set("prisma", prisma);
+  await next();
+});
 
 // Aplicando o CORS
 app.use(

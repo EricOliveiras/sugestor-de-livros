@@ -1,9 +1,9 @@
 import { Context } from "hono";
 import { hash, compare } from "bcrypt-ts";
 import { sign } from "hono/jwt";
-import { prisma } from "../lib/prisma";
 
 export const registerUser = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const { email, password, name } = await c.req.json();
 
@@ -63,6 +63,7 @@ export const registerUser = async (c: Context) => {
 };
 
 export const loginUser = async (c: Context) => {
+  const prisma = c.get("prisma");
   try {
     const { email, password } = await c.req.json();
     const user = await prisma.user.findUnique({ where: { email } });
