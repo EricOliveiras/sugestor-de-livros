@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon -r dotenv/config src/server.ts",
+    "dev": "nodemon -r dotenv/config src/local-dev-server.ts",
     "postinstall": "prisma generate && prisma migrate deploy"
   },
   "keywords": [],
