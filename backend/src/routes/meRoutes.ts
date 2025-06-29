@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Hono } from "hono";
 import {
   getMySavedBooks,
   saveBookToList,
@@ -7,9 +7,9 @@ import {
 } from "../controllers/meController";
 import { authMiddleware } from "../middleware/uthMiddleware";
 
-const router = Router();
+const router = new Hono();
 
-router.use(authMiddleware);
+router.use("*", authMiddleware);
 
 // Rotas de livros salvos
 router.get("/books", getMySavedBooks);

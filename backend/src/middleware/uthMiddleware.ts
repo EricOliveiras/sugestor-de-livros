@@ -1,36 +1,29 @@
-import { Response, NextFunction } from "express";
-import { AuthenticatedRequest } from "../types/custom";
-import jwt from "jsonwebtoken";
+import { Context, Next } from "hono";
+import { verify } from "hono/jwt";
 
-interface TokenPayload {
-  userId: string;
-  iat: number;
-  exp: number;
-}
+export const authMiddleware = async (c: Context, next: Next) => {
+  const authHeader = c.req.header("authorization");
 
-export const authMiddleware = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  const { authorization } = req.headers;
-
-  if (!authorization) {
-    return res.status(401).json({ message: "Token não fornecido." });
+  if (!authHeader) {
+    return c.json({ message: "Token não fornecido." }, 401);
   }
 
-  const [bearer, token] = authorization.split(" ");
+  const [bearer, token] = authHeader.split(" ");
 
   if (bearer !== "Bearer" || !token) {
-    return res.status(401).json({ message: "Token mal formatado." });
+    return c.json({ message: "Token mal formatado." }, 401);
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const { userId } = decoded as TokenPayload;
-    req.userId = userId;
-    next();
+    const secret = process.env.JWT_SECRET!;
+    const decodedPayload = await verify(token, secret);
+
+    // Em vez de req.userId, definimos uma variável no contexto do Hono
+    c.set("userId", decodedPayload.userId);
+
+    // Passa para a próxima função
+    await next();
   } catch (error) {
-    return res.status(401).json({ message: "Token inválido." });
+    return c.json({ message: "Token inválido ou expirado." }, 401);
   }
 };

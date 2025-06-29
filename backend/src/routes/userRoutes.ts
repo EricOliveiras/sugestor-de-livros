@@ -1,10 +1,9 @@
-import { Router } from 'express';
-// Adicione loginUser à importação
+import { Hono } from 'hono';
 import { registerUser, loginUser } from '../controllers/userController';
 
-const router = Router();
+const router = new Hono();
 
 router.post('/register', registerUser);
-router.post('/login', loginUser); // ADICIONE ESTA LINHA
+router.post('/login', loginUser);
 
 export default router;

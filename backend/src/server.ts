@@ -1,36 +1,42 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import bookRoutes from "./routes/bookRoutes";
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import userRoutes from "./routes/userRoutes";
+import bookRoutes from "./routes/bookRoutes";
 import meRoutes from "./routes/meRoutes";
 
-console.log("--- server.ts foi carregado ---"); // DIAGNÓSTICO
+const app = new Hono().basePath("/api");
 
-dotenv.config();
+app.use(
+  "*",
+  cors({
+    origin: ["https://oraculo-literario.vercel.app", "http://localhost:5173"], // Lembre-se que para o teste local, o frontend estará em localhost
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-const app = express();
-const port = process.env.PORT || 3001;
-
-const corsOptions = {
-  // Substitua pela URL exata do seu site no Vercel
-  origin: "https://oraculo-literario.vercel.app",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Métodos permitidos
-  allowedHeaders: "Content-Type,Authorization", // Headers permitidos
-};
-
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// Rotas da API
-app.use("/api/books", bookRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/me", meRoutes);
-
-app.get("/", (req, res) => {
-  res.send("API do Sugestor de Livros está no ar!");
+app.use("*", async (c, next) => {
+  console.log(`[LOG] Recebida Requisição: ${c.req.method} ${c.req.url}`);
+  await next();
 });
 
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando na porta ${port}`);
+app.route("/users", userRoutes);
+app.route("/books", bookRoutes);
+app.route("/me", meRoutes);
+
+app.get("/", (c) => {
+  return c.text("API do Oráculo Literário está no ar!");
+});
+
+// A linha 'export default' é o que a Cloudflare/Wrangler vai usar.
+export default app;
+
+// 2. ESTE BLOCO SÓ RODA QUANDO EXECUTAMOS O ARQUIVO LOCALMENTE COM `npm run dev`
+const port = Number(process.env.PORT) || 3001;
+console.log(`Servidor de desenvolvimento rodando em http://localhost:${port}`);
+
+serve({
+  fetch: app.fetch,
+  port: port,
 });

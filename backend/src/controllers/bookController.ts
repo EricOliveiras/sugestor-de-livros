@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { Context } from "hono";
 import axios from "axios";
-import { AuthenticatedRequest } from "../types/custom";
 import { prisma } from "../lib/prisma";
 
+// A interface não precisa mudar
 interface BookVolume {
   id: string;
   volumeInfo?: {
@@ -15,39 +15,52 @@ interface BookVolume {
   };
 }
 
-export const getBookSuggestion = async (req: Request, res: Response) => {
+// A assinatura muda para (c: Context)
+export const getBookSuggestion = async (c: Context) => {
   try {
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
-      return res.status(500).json({
-        message: "Erro de configuração do servidor: Chave da API ausente.",
-      });
+      return c.json(
+        { message: "Erro de configuração do servidor: Chave da API ausente." },
+        500
+      );
     }
 
-    // 1. REFINAMOS OS TERMOS DE BUSCA para incluir temas brasileiros
-    const searchTerms = [
-      "romance brasileiro",
-      "literatura brasileira",
-      "autores brasileiros",
-      "ficção científica brasileira",
-      "fantasia nacional",
-      "poesia brasileira",
-      "história do brasil",
-    ];
-    const randomTerm =
-      searchTerms[Math.floor(Math.random() * searchTerms.length)];
+    // req.query vira c.req.query()
+    const { genre, lang } = c.req.query();
+    let searchTerm: string;
+    let languageFilter: string = "pt-BR";
+
+    if (genre && typeof genre === "string" && genre.trim() !== "") {
+      searchTerm = genre.trim();
+    } else {
+      const defaultSearchTerms = [
+        "literatura brasileira",
+        "autores brasileiros",
+        "romance",
+        "suspense",
+      ];
+      searchTerm =
+        defaultSearchTerms[
+          Math.floor(Math.random() * defaultSearchTerms.length)
+        ];
+    }
+
+    if (lang && typeof lang === "string" && lang.trim() !== "") {
+      languageFilter = lang.trim();
+    }
+
+    const aprimoredQuery = `${searchTerm} subject:${searchTerm}`;
 
     const response = await axios.get(
       "https://www.googleapis.com/books/v1/volumes",
       {
         params: {
-          q: randomTerm, // Usamos os novos termos aqui
+          q: aprimoredQuery,
           maxResults: 40,
           printType: "books",
-          // 2. FILTRO DE IDIOMA: Mais específico para pt-BR
-          langRestrict: "pt-BR",
-          // 3. FILTRO DE PAÍS: Prioriza livros disponíveis no Brasil
-          country: "BR",
+          langRestrict: languageFilter,
+          country: languageFilter === "pt-BR" ? "BR" : undefined,
           key: apiKey,
         },
       }
@@ -56,9 +69,12 @@ export const getBookSuggestion = async (req: Request, res: Response) => {
     const items = response.data.items;
 
     if (!items || items.length === 0) {
-      return res.status(404).json({
-        message: "Nenhuma sugestão encontrada para o termo. Tente novamente.",
-      });
+      return c.json(
+        {
+          message: "Nenhuma sugestão encontrada para o termo. Tente novamente.",
+        },
+        404
+      );
     }
 
     const validBooks: BookVolume[] = items.filter(
@@ -71,15 +87,17 @@ export const getBookSuggestion = async (req: Request, res: Response) => {
     );
 
     if (validBooks.length === 0) {
-      return res.status(404).json({
-        message:
-          "A API retornou livros, mas nenhum com todos os detalhes necessários. Tente outra vez.",
-      });
+      return c.json(
+        {
+          message:
+            "A API retornou livros, mas nenhum com todos os detalhes necessários. Tente outra vez.",
+        },
+        404
+      );
     }
 
     const randomBook =
       validBooks[Math.floor(Math.random() * validBooks.length)];
-
     const suggestion = {
       googleBooksId: randomBook.id,
       title: randomBook.volumeInfo!.title,
@@ -91,84 +109,63 @@ export const getBookSuggestion = async (req: Request, res: Response) => {
       ),
     };
 
-    return res.status(200).json(suggestion);
+    // res.status().json() vira c.json()
+    return c.json(suggestion, 200);
   } catch (error: any) {
     console.error(
       "ERRO no getBookSuggestion:",
       error.response?.data?.error || error.message
     );
-    return res
-      .status(500)
-      .json({ message: "Erro ao se comunicar com a API de livros." });
+    return c.json(
+      { message: "Erro ao se comunicar com a API de livros." },
+      500
+    );
   }
 };
 
-export const rateBook = async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.userId;
-  const { bookId } = req.params;
-  const { value } = req.body; // A nota (ex: 4) virá no corpo da requisição
-
-  if (!userId) {
-    return res.status(401).json({ message: "Usuário não autenticado." });
-  }
-
-  // Validação da nota
-  if (typeof value !== "number" || value < 1 || value > 5) {
-    return res
-      .status(400)
-      .json({ message: "A avaliação deve ser um número entre 1 e 5." });
-  }
-
+export const rateBook = async (c: Context) => {
   try {
+    const userId = c.get("userId"); // req.userId vira c.get('userId')
+    const bookId = c.req.param("bookId"); // req.params vira c.req.param()
+    const { value } = await c.req.json(); // req.body vira await c.req.json()
+
+    if (!userId) {
+      return c.json({ message: "Usuário não autenticado." }, 401);
+    }
+
+    if (typeof value !== "number" || value < 1 || value > 5) {
+      return c.json(
+        { message: "A avaliação deve ser um número entre 1 e 5." },
+        400
+      );
+    }
+
     const newRating = await prisma.rating.upsert({
-      // Onde procurar por uma avaliação existente:
-      where: {
-        userId_bookId: {
-          // Usamos a chave única composta que definimos no schema
-          userId: userId,
-          bookId: bookId,
-        },
-      },
-      // Se já existir, ATUALIZE a nota:
-      update: {
-        value: value,
-      },
-      // Se não existir, CRIE uma nova avaliação:
-      create: {
-        value: value,
-        userId: userId,
-        bookId: bookId,
-      },
+      where: { userId_bookId: { userId: userId, bookId: bookId } },
+      update: { value: value },
+      create: { value: value, userId: userId, bookId: bookId },
     });
 
-    return res.status(200).json(newRating);
+    return c.json(newRating, 200);
   } catch (error) {
     console.error("Erro ao avaliar o livro:", error);
-    return res
-      .status(500)
-      .json({ message: "Erro interno ao processar a avaliação." });
+    return c.json({ message: "Erro interno ao processar a avaliação." }, 500);
   }
 };
 
-export const getFeaturedBooks = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+export const getFeaturedBooks = async (c: Context) => {
   try {
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
-      return res
-        .status(500)
-        .json({ message: "Erro de configuração do servidor." });
+      return c.json({ message: "Erro de configuração do servidor." }, 500);
     }
 
-    // Fazemos uma busca por um tema popular e relevante
     const response = await axios.get(
       "https://www.googleapis.com/books/v1/volumes",
       {
         params: {
           q: "best sellers ficção brasileira",
-          maxResults: 10, // Pegamos 10 livros para o carrossel
+          maxResults: 10,
           printType: "books",
           langRestrict: "pt-BR",
           country: "BR",
@@ -180,12 +177,9 @@ export const getFeaturedBooks = async (
     const items = response.data.items;
 
     if (!items || items.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Nenhum livro em destaque encontrado." });
+      return c.json({ message: "Nenhum livro em destaque encontrado." }, 404);
     }
 
-    // Usamos o mesmo filtro de qualidade para garantir que os livros têm os dados necessários
     const validBooks = items.filter(
       (item: BookVolume) =>
         item.volumeInfo &&
@@ -194,14 +188,12 @@ export const getFeaturedBooks = async (
         item.volumeInfo.imageLinks?.thumbnail
     );
 
-    return res.status(200).json(validBooks);
+    return c.json(validBooks, 200);
   } catch (error: any) {
     console.error(
       "ERRO ao buscar livros em destaque:",
       error.response?.data?.error || error.message
     );
-    return res
-      .status(500)
-      .json({ message: "Erro ao buscar livros em destaque." });
+    return c.json({ message: "Erro ao buscar livros em destaque." }, 500);
   }
 };

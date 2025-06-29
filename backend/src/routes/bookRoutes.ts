@@ -1,17 +1,23 @@
-import { Router } from "express";
+import { Hono } from "hono";
 import {
   getBookSuggestion,
-  getFeaturedBooks,
   rateBook,
+  getFeaturedBooks,
 } from "../controllers/bookController";
 import { authMiddleware } from "../middleware/uthMiddleware";
 
-const router = Router();
+const bookRoutes = new Hono();
 
-router.get("/featured", authMiddleware, getFeaturedBooks);
+// Aplicamos o middleware a todas as rotas de livros
+bookRoutes.use("*", authMiddleware);
 
-router.get("/suggestion", authMiddleware, getBookSuggestion);
+// GET /api/books/featured
+bookRoutes.get("/featured", getFeaturedBooks);
 
-router.post("/:bookId/rate", authMiddleware, rateBook);
+// GET /api/books/suggestion
+bookRoutes.get("/suggestion", getBookSuggestion);
 
-export default router;
+// POST /api/books/:bookId/rate
+bookRoutes.post("/:bookId/rate", rateBook);
+
+export default bookRoutes;

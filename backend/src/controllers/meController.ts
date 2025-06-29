@@ -1,29 +1,32 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/custom";
+import { Context } from "hono";
 import { prisma } from "../lib/prisma";
+import { User, Book, Rating } from "@prisma/client";
+
+// 2. CRIAMOS NOSSO TIPO EXPLÍCITO E COMPLETO
+// Um usuário que INCLUI uma lista de livros, onde cada livro INCLUI uma lista de ratings.
+type UserWithSavedBooks = User & {
+  savedBooks: (Book & {
+    ratings: Rating[];
+  })[];
+};
 
 // Função para SALVAR um livro na lista do usuário
-export const saveBookToList = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  const userId = req.userId;
-  // Os dados do livro virão no corpo da requisição
-  const { googleBooksId, title, authors, synopsis, coverUrl } = req.body;
-
-  if (!userId) {
-    return res.status(401).json({ message: "Usuário não autenticado." });
-  }
-
+export const saveBookToList = async (c: Context) => {
   try {
-    // 'upsert': Cria o livro se ele não existir em nossa DB, ou apenas o utiliza se já existir.
+    const userId = c.get("userId"); // Pegamos o userId do contexto
+    const { googleBooksId, title, authors, synopsis, coverUrl } =
+      await c.req.json(); // Pegamos o corpo da requisição
+
+    if (!userId) {
+      return c.json({ message: "Usuário não autenticado." }, 401);
+    }
+
     const book = await prisma.book.upsert({
       where: { googleBooksId },
-      update: { title, authors, synopsis, coverUrl }, // Atualiza caso os dados mudem na API do Google
+      update: { title, authors, synopsis, coverUrl },
       create: { googleBooksId, title, authors, synopsis, coverUrl },
     });
 
-    // Conecta o livro ao usuário
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -33,69 +36,60 @@ export const saveBookToList = async (
       },
     });
 
-    return res.status(200).json({ message: "Livro salvo com sucesso!" });
+    return c.json({ message: "Livro salvo com sucesso!" }, 200);
   } catch (error) {
     console.error("Erro ao salvar livro:", error);
-    return res.status(500).json({ message: "Erro interno ao salvar o livro." });
+    return c.json({ message: "Erro interno ao salvar o livro." }, 500);
   }
 };
 
 // Função para BUSCAR a lista de livros do usuário
-export const getMySavedBooks = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  const userId = req.userId;
-
-  if (!userId) {
-    return res.status(401).json({ message: "Usuário não autenticado." });
-  }
-
+// Função para BUSCAR a lista de livros do usuário
+export const getMySavedBooks = async (c: Context) => {
   try {
-    const userWithBooks = await prisma.user.findUnique({
+    const userId = c.get("userId");
+
+    if (!userId) {
+      return c.json({ message: "Usuário não autenticado." }, 401);
+    }
+
+    // 3. USAMOS NOSSO TIPO PARA GARANTIR QUE O TYPESCRIPT ENTENDA O RESULTADO
+    const userWithBooks = (await prisma.user.findUnique({
       where: { id: userId },
-      // ESTA É A MUDANÇA: um 'include' dentro de outro
       include: {
         savedBooks: {
           orderBy: { title: "asc" },
-          // Para cada livro salvo, inclua também as avaliações...
           include: {
             ratings: {
-              // ...mas apenas a avaliação que pertence ao usuário logado.
               where: { userId: userId },
             },
           },
         },
       },
-    });
+    })) as UserWithSavedBooks | null;
 
     if (!userWithBooks) {
-      return res.status(404).json({ message: "Usuário não encontrado." });
+      return c.json({ message: "Usuário não encontrado." }, 404);
     }
 
-    // Agora cada livro dentro de 'savedBooks' terá um campo 'ratings'
-    // que será um array com 0 ou 1 avaliação (a do usuário atual).
-    return res.status(200).json(userWithBooks.savedBooks);
+    // Agora o TypeScript sabe que userWithBooks.savedBooks existe, e o erro desaparece.
+    return c.json(userWithBooks.savedBooks, 200);
   } catch (error) {
     console.error("Erro ao buscar livros salvos:", error);
-    return res.status(500).json({ message: "Erro interno do servidor." });
+    return c.json({ message: "Erro interno do servidor." }, 500);
   }
 };
 
-export const removeBookFromList = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  const userId = req.userId;
-  // O ID do livro virá como um parâmetro na URL (ex: /api/me/books/ID_DO_LIVRO)
-  const { bookId } = req.params;
-
-  if (!userId) {
-    return res.status(401).json({ message: "Usuário não autenticado." });
-  }
-
+// Função para REMOVER um livro da lista
+export const removeBookFromList = async (c: Context) => {
   try {
-    // Usamos o 'disconnect' do Prisma para remover a relação
+    const userId = c.get("userId");
+    const bookId = c.req.param("bookId"); // Pegamos o parâmetro da URL
+
+    if (!userId) {
+      return c.json({ message: "Usuário não autenticado." }, 401);
+    }
+
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -105,55 +99,44 @@ export const removeBookFromList = async (
       },
     });
 
-    return res
-      .status(200)
-      .json({ message: "Livro removido da lista com sucesso!" });
+    return c.json({ message: "Livro removido da lista com sucesso!" }, 200);
   } catch (error) {
     console.error("Erro ao remover livro:", error);
-    return res
-      .status(500)
-      .json({ message: "Erro interno ao remover o livro." });
+    return c.json({ message: "Erro interno ao remover o livro." }, 500);
   }
 };
 
-export const updateMyProfile = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
-  const userId = req.userId;
-  // Pegamos apenas o nome e o avatar do corpo da requisição
-  const { name, avatarUrl } = req.body;
-
-  if (!userId) {
-    return res.status(401).json({ message: "Usuário não autenticado." });
-  }
-
-  // Criamos um objeto de dados apenas com os campos que foram enviados
-  const dataToUpdate: { name?: string; avatarUrl?: string } = {};
-  if (name) dataToUpdate.name = name;
-  if (avatarUrl) dataToUpdate.avatarUrl = avatarUrl;
-
-  // Verificamos se há algo para atualizar
-  if (Object.keys(dataToUpdate).length === 0) {
-    return res
-      .status(400)
-      .json({ message: "Nenhum dado fornecido para atualização." });
-  }
-
+// Função para ATUALIZAR o perfil do usuário
+export const updateMyProfile = async (c: Context) => {
   try {
+    const userId = c.get("userId");
+    const { name, avatarUrl } = await c.req.json();
+
+    if (!userId) {
+      return c.json({ message: "Usuário não autenticado." }, 401);
+    }
+
+    const dataToUpdate: { name?: string; avatarUrl?: string } = {};
+    if (name) dataToUpdate.name = name;
+    if (avatarUrl) dataToUpdate.avatarUrl = avatarUrl;
+
+    if (Object.keys(dataToUpdate).length === 0) {
+      return c.json(
+        { message: "Nenhum dado fornecido para atualização." },
+        400
+      );
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: dataToUpdate,
     });
 
-    // Removemos a senha do objeto antes de enviá-lo de volta
     const { password, ...userWithoutPassword } = updatedUser;
 
-    return res.status(200).json(userWithoutPassword);
+    return c.json(userWithoutPassword, 200);
   } catch (error) {
     console.error("Erro ao atualizar perfil:", error);
-    return res
-      .status(500)
-      .json({ message: "Erro interno ao atualizar o perfil." });
+    return c.json({ message: "Erro interno ao atualizar o perfil." }, 500);
   }
 };

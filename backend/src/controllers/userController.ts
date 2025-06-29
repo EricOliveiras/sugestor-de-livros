@@ -1,17 +1,20 @@
-import { Request, Response } from "express";
+import { Context } from "hono";
 import { prisma } from "../lib/prisma";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { hash, compare } from "bcrypt-ts";
+import { sign } from "hono/jwt";
 
-export const registerUser = async (req: Request, res: Response) => {
+export const registerUser = async (c: Context) => {
   try {
-    // 1. NÃO esperamos mais o avatarUrl vindo do frontend
-    const { email, password, name } = req.body;
+    const { email, password, name } = await c.req.json();
 
     if (!email || !password || !name) {
-      return res
-        .status(400)
-        .json({ message: "Nome, email e senha são obrigatórios." });
+      return c.json({ message: "Nome, email e senha são obrigatórios." }, 400);
+    }
+    if (password.length < 6) {
+      return c.json(
+        { message: "A senha deve ter pelo menos 6 caracteres." },
+        400
+      );
     }
 
     const allowedDomains = [
@@ -23,87 +26,67 @@ export const registerUser = async (req: Request, res: Response) => {
     const emailDomain = email.split("@")[1];
 
     if (!allowedDomains.includes(emailDomain)) {
-      return res.status(400).json({
-        message:
-          "Por favor, use um email de um provedor válido (Gmail, Outlook, etc.).",
-      });
+      return c.json(
+        {
+          message:
+            "Por favor, use um email de um provedor válido (Gmail, Outlook, etc.).",
+        },
+        400
+      );
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email },
-    });
-
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({ message: "Este email já está em uso." });
+      return c.json({ message: "Este email já está em uso." }, 409);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 2. GERAMOS A URL DO AVATAR PADRÃO AQUI
-    // Usamos o nome do usuário como "semente" para o avatar
+    const hashedPassword = await hash(password, 10);
     const defaultAvatarUrl = `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(
       name || "User"
     )}`;
 
-    // 3. Criar o novo usuário, agora com o avatarUrl padrão
     const user = await prisma.user.create({
       data: {
-        email: email,
-        name: name,
+        email,
+        name,
         password: hashedPassword,
-        avatarUrl: defaultAvatarUrl, // Salva a URL do avatar padrão
+        avatarUrl: defaultAvatarUrl,
       },
     });
 
     const { password: _, ...userWithoutPassword } = user;
-    return res.status(201).json(userWithoutPassword);
+    return c.json(userWithoutPassword, 201);
   } catch (error) {
     console.error("Erro ao registrar usuário:", error);
-    return res.status(500).json({ message: "Erro interno do servidor." });
+    return c.json({ message: "Erro interno do servidor." }, 500);
   }
 };
 
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (c: Context) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = await c.req.json();
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    // a. Validação de entrada
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email e senha são obrigatórios." });
+    if (!user || !user.password) {
+      return c.json({ message: "Credenciais inválidas." }, 401);
     }
 
-    // b. Encontrar o usuário no banco de dados
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      // Usamos uma mensagem genérica para não informar se o email existe ou não
-      return res.status(401).json({ message: "Credenciais inválidas." }); // 401 Unauthorized
-    }
-
-    // c. Comparar a senha enviada com a senha hasheada no banco
-    const isPasswordValid = await bcrypt.compare(password, user.password!);
-
+    const isPasswordValid = await compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Credenciais inválidas." });
+      return c.json({ message: "Credenciais inválidas." }, 401);
     }
 
-    // d. Gerar o Token JWT se a senha for válida
-    const token = jwt.sign(
-      { userId: user.id }, // O "payload" - dados que queremos guardar no token
-      process.env.JWT_SECRET!, // O nosso segredo do .env
-      { expiresIn: "1d" } // Opções, como o tempo de expiração do token (1 dia)
-    );
+    const payload = {
+      userId: user.id,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+    }; // Token expira em 7 dias
+    const secret = process.env.JWT_SECRET!;
+    const token = await sign(payload, secret);
 
-    // e. Enviar o token (e os dados do usuário sem a senha) de volta
-    const { password: _, ...userWithoutPassword } = user;
-
-    return res.status(200).json({ user: userWithoutPassword, token });
+    const { password: __, ...userWithoutPassword } = user;
+    return c.json({ user: userWithoutPassword, token });
   } catch (error) {
     console.error("Erro ao fazer login:", error);
-    return res.status(500).json({ message: "Erro interno do servidor." });
+    return c.json({ message: "Erro interno do servidor." }, 500);
   }
 };
