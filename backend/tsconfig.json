@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "lib": ["es2020"],
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["es2022", "dom"],
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    // Adicionamos esta linha para dizer ao TS onde procurar por tipos customizados
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "types": ["@cloudflare/workers-types", "node"]
   },
   "include": ["src/**/*"]
 }
