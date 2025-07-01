@@ -16,12 +16,13 @@ import {
   Grid,
   GridItem,
   Flex,
+  Hide,
+  Show,
   Icon,
 } from "@chakra-ui/react";
 // 1. Importando um ícone de livro da nova biblioteca
+import { AuthCarousel } from "../components/AuthCarousel";
 import { GiOpenBook } from "react-icons/gi";
-
-const imageUrl = "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -50,55 +51,94 @@ export const LoginPage = () => {
 
   return (
     <Grid
-      templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+      templateColumns={{ base: "1fr", md: "50% 50%" }}
       h="100vh"
       overflow="hidden"
     >
+      {/* LADO ESQUERDO: O CARROSSEL (só aparece no desktop) */}
+      <GridItem display={{ base: "none", md: "block" }}>
+        <AuthCarousel />
+      </GridItem>
+
+      {/* LADO DIREITO: O FORMULÁRIO (com estilos responsivos) */}
       <GridItem
         w="100%"
         h="100%"
-        bgImage={`url(${imageUrl})`}
-        bgPosition="center"
+        overflowY="auto"
+        // 2. APLICAMOS ESTILOS DIFERENTES PARA MOBILE E DESKTOP
+        bg={{ base: "brand.espresso", md: "white" }}
+        bgImage={{
+          base: `url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&q=80')`,
+          md: "none",
+        }}
         bgSize="cover"
-        display={{ base: "none", md: "block" }}
-      />
-
-      <GridItem w="100%" h="100%" bg="white">
-        <Flex align="center" justify="center" h="100%" direction="column" p={8}>
-          <Box width="100%" maxWidth="400px">
-            {/* 2. ADICIONAMOS A SEÇÃO DE IDENTIDADE VISUAL AQUI */}
-            <VStack spacing={2} mb={10} textAlign="center">
-              <Icon as={GiOpenBook} boxSize={12} color="brand.sage" />
-              <Heading as="h1" size="2xl" color="brand.espresso">
-                Oráculo Literário
+        bgPosition="center"
+      >
+        <Flex
+          align="center"
+          justify="center"
+          minH="100%" // Garante que o Flex ocupe a altura toda
+          direction="column"
+          p={8}
+        >
+          {/* 3. CARD COM FUNDO SEMI-TRANSPARENTE (só no mobile) */}
+          <Box
+            width="100%"
+            maxWidth="400px"
+            bg={{ base: "rgba(0, 0, 0, 0.7)", md: "transparent" }} // Fundo do card
+            p={{ base: 6, md: 0 }}
+            borderRadius={{ base: "lg", md: "none" }}
+            boxShadow={{ base: "lg", md: "none" }}
+          >
+            {/* Escondemos o título principal no mobile, pois ele já está no topo do card */}
+            <Hide below="md">
+              <Heading
+                as="h2"
+                size="xl"
+                color="brand.espresso"
+                textAlign="center"
+                mb={6}
+              >
+                Bem-vindo de volta!
               </Heading>
-              <Text fontSize="lg" color="gray.600">
-                Descubra livros que você não sabia que amava.
-              </Text>
-            </VStack>
+            </Hide>
 
-            <VStack spacing={6} as="form" onSubmit={handleSubmit}>
-              <Heading as="h2" size="lg" color="brand.espresso">
-                Login
-              </Heading>
+            <VStack spacing={4} as="form" onSubmit={handleSubmit}>
+              {/* Mostramos o logo e título apenas no mobile */}
+              <Show below="md">
+                <VStack spacing={2} mb={6} textAlign="center" color="white">
+                  <Icon as={GiOpenBook} boxSize={12} />
+                  <Heading as="h1" size="2xl">
+                    Oráculo Literário
+                  </Heading>
+                </VStack>
+              </Show>
 
               <FormControl isRequired>
-                <FormLabel color="brand.espresso">Email</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Email
+                </FormLabel>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel color="brand.espresso">Senha</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Senha
+                </FormLabel>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
 
@@ -121,7 +161,7 @@ export const LoginPage = () => {
                 Entrar
               </Button>
 
-              <Text color="brand.espresso">
+              <Text color={{ base: "gray.200", md: "brand.espresso" }}>
                 Não tem uma conta?{" "}
                 <Link
                   as={RouterLink}

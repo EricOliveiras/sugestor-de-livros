@@ -17,19 +17,13 @@ import {
   Alert,
   AlertIcon,
   useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalCloseButton,
-  ModalBody,
   useDisclosure,
-  Grid,
-  GridItem,
   useTheme,
   Spinner,
 } from "@chakra-ui/react";
 import { QuestionOutlineIcon } from "@chakra-ui/icons";
 import Slider from "react-slick";
+import { BookDetailModal } from "../components/BookDetailModal";
 
 const subtlePatternUrl =
   'url(\'data:image/svg+xml,%3Csvg width="6" height="6" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23c8c696" fill-opacity="0.4" fill-rule="evenodd"%3E%3Cpath d="M5 0h1L0 6V5zM6 5v1H5z"/%3E%3C/g%3E%3C/svg%3E\')';
@@ -226,60 +220,13 @@ export const HomePage = () => {
         </Container>
       </Box>
 
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered>
-        <ModalOverlay />
-        <ModalContent borderRadius="lg" overflow="hidden">
-          <ModalCloseButton />
-          <ModalBody p={0}>
-            {book && (
-              <Grid templateColumns={{ base: "1fr", md: "30% 70%" }} w="100%">
-                <GridItem>
-                  <Image
-                    src={book.coverUrl}
-                    alt={`Capa do livro ${book.title}`}
-                    w="100%"
-                    h="100%"
-                    objectFit="contain"
-                    maxH="400px"
-                    mx="auto"
-                  />
-                </GridItem>
-                <GridItem>
-                  <Flex direction="column" p={6} h="100%">
-                    <Heading as="h2" size="xl" color="brand.espresso">
-                      {book.title}
-                    </Heading>
-                    <Text fontSize="lg" color="gray.600" mt={2}>
-                      por {book.authors.join(", ")}
-                    </Text>
-                    <Box flex="1" mt={6}>
-                      <Heading size="md" mb={2} color="brand.espresso">
-                        Sinopse
-                      </Heading>
-                      <Text noOfLines={10}>{book.synopsis}</Text>
-                    </Box>
-                    {/* 2. BOTÕES DO MODAL REINSERIDOS */}
-                    <Flex justify="flex-end" mt={6}>
-                      <Button variant="ghost" mr={3} onClick={onClose}>
-                        Fechar
-                      </Button>
-                      <Button
-                        bgColor="brand.sage"
-                        color="white"
-                        _hover={{ bgColor: "brand.olive" }}
-                        onClick={handleSaveBook}
-                        isLoading={isSaving}
-                      >
-                        Salvar na minha lista
-                      </Button>
-                    </Flex>
-                  </Flex>
-                </GridItem>
-              </Grid>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <BookDetailModal
+        isOpen={isOpen}
+        onClose={onClose}
+        book={book}
+        onSave={handleSaveBook}
+        isSaving={isSaving}
+      />
     </Flex>
   );
 };

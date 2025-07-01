@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -7,14 +7,15 @@ import { ReadingListPage } from "./pages/ReadingListPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TermsOfUsePage } from "./pages/TermsOfUsePage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
-import { ChangelogPage } from "./pages/ChangelogPage"; // Importe a nova página
+import { ChangelogPage } from "./pages/ChangelogPage";
+import { AboutPage } from "./pages/AboutPage"; 
 import { MainLayout } from "./components/MainLayout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rotas que precisam de Header e Footer */}
+        {/* Agrupamos todas as rotas que usam o mesmo Layout */}
         <Route
           element={
             <MainLayout>
@@ -46,9 +47,13 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Rotas públicas com layout */}
           <Route path="/terms-of-use" element={<TermsOfUsePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
+          {/* ADICIONAMOS A NOVA ROTA AQUI */}
+          <Route path="/about" element={<AboutPage />} />
         </Route>
 
         {/* Rotas de Login/Cadastro que têm layout próprio */}
@@ -58,7 +63,5 @@ function App() {
     </BrowserRouter>
   );
 }
-
-import { Outlet } from "react-router-dom";
 
 export default App;

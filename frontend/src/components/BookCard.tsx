@@ -1,6 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
-
+  Box,
   Image,
   Text,
   Heading,
@@ -10,18 +10,23 @@ import {
   HStack,
   Icon,
 } from "@chakra-ui/react";
-import { StarIcon } from "@chakra-ui/icons"; // Importamos o ícone de estrela do Chakra
+import { StarIcon } from "@chakra-ui/icons";
 import type { Book } from "../services/bookService";
 
 interface BookCardProps {
   book: Book;
   onRemove: (bookId: string) => Promise<void>;
   onRate: (bookId: string, rating: number) => Promise<void>;
+  onCardClick: (book: Book) => void;
 }
 
-export const BookCard = ({ book, onRemove, onRate }: BookCardProps) => {
+export const BookCard = ({
+  book,
+  onRemove,
+  onRate,
+  onCardClick,
+}: BookCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  // Estado para controlar o efeito de hover nas estrelas
   const [hoverRating, setHoverRating] = useState(0);
 
   const initialRating =
@@ -31,7 +36,8 @@ export const BookCard = ({ book, onRemove, onRate }: BookCardProps) => {
     onRate(book.id, rate);
   };
 
-  const handleRemoveClick = async () => {
+  const handleRemoveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsDeleting(true);
     await onRemove(book.id);
   };
@@ -46,29 +52,40 @@ export const BookCard = ({ book, onRemove, onRate }: BookCardProps) => {
       borderWidth="1px"
       borderColor="gray.200"
       h="100%"
+      cursor="pointer"
+      onClick={() => onCardClick(book)}
+      transition="all 0.2s"
+      _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
     >
+      {/* IMAGEM MAIS LARGA, COMO SOLICITADO */}
       <Image
         src={book.coverUrl}
         alt={`Capa do livro ${book.title}`}
         borderRadius="md"
-        h="250px"
-        w="auto"
-        mx="auto"
+        h="280px"
+        w="100%"
         objectFit="contain"
       />
 
       <Flex direction="column" flex="1" mt={4}>
-        <Heading size="sm" noOfLines={2}>
-          {book.title}
-        </Heading>
-        <Text fontSize="sm" color="gray.600" noOfLines={1} mb={2}>
-          {book.authors}
-        </Text>
+        <Box>
+          <Heading size="sm" noOfLines={2}>
+            {book.title}
+          </Heading>
+          <Text fontSize="sm" color="gray.600" noOfLines={1} mb={2}>
+            {book.authors}
+          </Text>
+        </Box>
 
         <Spacer />
 
-        {/* NOSSO COMPONENTE DE ESTRELAS CUSTOMIZADO */}
-        <HStack spacing={1} onMouseLeave={() => setHoverRating(0)}>
+        {/* SUA SOLUÇÃO CORRETA PARA AS ESTRELAS NA HORIZONTAL */}
+        <HStack
+          spacing={1}
+          pt={2}
+          onMouseLeave={() => setHoverRating(0)}
+          onClick={(e) => e.stopPropagation()}
+        >
           {[1, 2, 3, 4, 5].map((star) => (
             <Icon
               key={star}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Box,
   Button,
@@ -16,19 +17,23 @@ import {
   GridItem,
   Flex,
   Icon,
+  Show,
 } from "@chakra-ui/react";
 import { GiOpenBook } from "react-icons/gi";
-import { register } from "../services/authService";
+import { AuthCarousel } from "../components/AuthCarousel";
 
-const imageUrl = "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f";
+// AQUI ESTÁ A LINHA QUE FALTAVA
+const imageUrl =
+  "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&q=80";
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); // Mantemos este
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +41,6 @@ export const RegisterPage = () => {
     event.preventDefault();
     setError(null);
 
-    // Validação de frontend
     if (password !== confirmPassword) {
       setError("As senhas não coincidem.");
       return;
@@ -48,7 +52,6 @@ export const RegisterPage = () => {
 
     setIsLoading(true);
     try {
-      // Agora enviamos apenas os 3 campos necessários
       await register({ name, email, password });
       alert(
         "Cadastro realizado com sucesso! Por favor, faça o login para continuar."
@@ -63,67 +66,111 @@ export const RegisterPage = () => {
   };
 
   return (
-    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} h="100%" w="100%">
+    <Grid
+      templateColumns={{ base: "1fr", md: "50% 50%" }}
+      h="100vh"
+      overflow="hidden"
+    >
+      <GridItem display={{ base: "none", md: "block" }}>
+        <AuthCarousel />
+      </GridItem>
+
       <GridItem
         w="100%"
         h="100%"
-        bgImage={`url(${imageUrl})`}
-        bgPosition="center"
+        overflowY="auto"
+        bg={{ base: "brand.espresso", md: "white" }}
+        bgImage={{ base: `url('${imageUrl}')`, md: "none" }}
         bgSize="cover"
-        display={{ base: "none", md: "block" }}
-      />
-      <GridItem w="100%" h="100%" bg="white" overflowY="auto">
-        <Flex align="center" justify="center" h="100%" direction="column" p={8}>
-          <Box width="100%" maxWidth="400px">
-            <VStack spacing={2} mb={10} textAlign="center">
-              <Icon as={GiOpenBook} boxSize={12} color="brand.sage" />
-              <Heading as="h1" size="2xl" color="brand.espresso">
-                Oráculo Literário
-              </Heading>
-              <Text fontSize="lg" color="gray.600">
-                Descubra livros que você não sabia que amava.
-              </Text>
-            </VStack>
-
+        bgPosition="center"
+      >
+        <Flex
+          align="center"
+          justify="center"
+          minH="100%"
+          direction="column"
+          p={8}
+        >
+          <Box
+            width="100%"
+            maxWidth="400px"
+            bg={{ base: "rgba(0, 0, 0, 0.7)", md: "transparent" }}
+            p={{ base: 6, md: 0 }}
+            borderRadius={{ base: "lg", md: "none" }}
+            boxShadow={{ base: "lg", md: "none" }}
+          >
             <VStack spacing={4} as="form" onSubmit={handleSubmit}>
-              <Heading as="h2" size="lg" color="brand.espresso">
+              <Show below="md">
+                <VStack spacing={2} mb={6} textAlign="center" color="white">
+                  <Icon as={GiOpenBook} boxSize={12} />
+                  <Heading as="h1" size="2xl">
+                    Oráculo Literário
+                  </Heading>
+                </VStack>
+              </Show>
+
+              <Heading
+                as="h2"
+                size="lg"
+                color={{ base: "white", md: "brand.espresso" }}
+                textAlign="center"
+              >
                 Criar Conta
               </Heading>
 
               <FormControl isRequired>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Nome
+                </FormLabel>
                 <Input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>Email</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Email
+                </FormLabel>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>Senha (mínimo 6 caracteres)</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Senha (mínimo 6 caracteres)
+                </FormLabel>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>Confirmar Senha</FormLabel>
+                <FormLabel color={{ base: "white", md: "brand.espresso" }}>
+                  Confirmar Senha
+                </FormLabel>
                 <Input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   focusBorderColor="brand.sage"
+                  bg="white"
+                  color="black"
                 />
               </FormControl>
 
@@ -146,7 +193,7 @@ export const RegisterPage = () => {
                 Cadastrar
               </Button>
 
-              <Text color="brand.espresso">
+              <Text color={{ base: "gray.200", md: "brand.espresso" }}>
                 Já tem uma conta?{" "}
                 <Link
                   as={RouterLink}

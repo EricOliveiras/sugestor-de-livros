@@ -16,7 +16,15 @@ export const Footer = () => {
         </Text>
         <Spacer />
         <Flex>
-          {/* Adicionamos o novo link */}
+          {/* ADICIONAMOS O NOVO LINK AQUI */}
+          <ChakraLink
+            as={RouterLink}
+            to="/about"
+            mr={4}
+            _hover={{ color: "white" }}
+          >
+            Sobre
+          </ChakraLink>
           <ChakraLink
             as={RouterLink}
             to="/changelog"
