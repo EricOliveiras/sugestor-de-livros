@@ -4,11 +4,13 @@ import { createPrismaClient } from "../lib/prisma";
 
 type AppEnv = {
   Bindings: {
-    DATABASE_URL: string;
-    JWT_SECRET: string;
     GOOGLE_BOOKS_API_KEY: string;
   };
-  Variables: { prisma: ReturnType<typeof createPrismaClient>; }; // Usamos 'any' aqui para simplicidade
+  // CORREÇÃO: Adicionamos 'userId' aqui para que as funções o reconheçam no contexto
+  Variables: {
+    prisma: any;
+    userId: string;
+  };
 };
 
 // A interface não precisa mudar
@@ -132,17 +134,16 @@ export const getBookSuggestion = async (c: Context<AppEnv>) => {
   }
 };
 
+/**
+ * Avalia ou atualiza a avaliação de um livro na lista do usuário.
+ */
 export const rateBook = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
+  const userId = c.get("userId"); // Agora o TypeScript entende isso perfeitamente
+  const bookId = c.req.param("bookId");
+
   try {
-    // Supondo que seu middleware JWT armazene o payload em 'jwtPayload'
-    const jwtPayload = c.get("jwtPayload");
-    const userId = jwtPayload?.userId;
-    const bookId = c.req.param("bookId"); // req.params vira c.req.param()
-    const { value } = await c.req.json(); // req.body vira await c.req.json()
-    if (!userId) {
-      return c.json({ message: "Usuário não autenticado." }, 401);
-    }
+    const { value } = await c.req.json();
 
     if (typeof value !== "number" || value < 1 || value > 5) {
       return c.json(
