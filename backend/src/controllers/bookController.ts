@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import axios from "axios";
-import { createPrismaClient } from "../lib/prisma";
 
 type AppEnv = {
   Bindings: {
@@ -29,7 +28,7 @@ interface BookVolume {
 // A assinatura muda para (c: Context)
 export const getBookSuggestion = async (c: Context<AppEnv>) => {
   try {
-    const apiKey = c.env.GOOGLE_BOOKS_API_KEY;
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
       return c.json(
         { message: "Erro de configuração do servidor: Chave da API ausente." },
@@ -167,7 +166,7 @@ export const rateBook = async (c: Context<AppEnv>) => {
 
 export const getFeaturedBooks = async (c: Context<AppEnv>) => {
   try {
-    const apiKey = c.env.GOOGLE_BOOKS_API_KEY;
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
     if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
       return c.json({ message: "Erro de configuração do servidor." }, 500);
     }
