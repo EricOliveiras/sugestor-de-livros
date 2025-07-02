@@ -18,6 +18,7 @@ import {
   Flex,
   Icon,
   Show,
+  useToast,
 } from "@chakra-ui/react";
 import { GiOpenBook } from "react-icons/gi";
 import { AuthCarousel } from "../components/AuthCarousel";
@@ -29,6 +30,7 @@ const imageUrl =
 export const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const toast = useToast();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,10 +55,19 @@ export const RegisterPage = () => {
     setIsLoading(true);
     try {
       await register({ name, email, password });
-      alert(
-        "Cadastro realizado com sucesso! Por favor, faça o login para continuar."
-      );
-      navigate("/login");
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Você será redirecionado para a página de login.",
+        status: "success",
+        duration: 2000, // A notificação some após 2 segundos
+        isClosable: true,
+        position: "top",
+        // Esta é a parte mais importante:
+        onCloseComplete: () => {
+          // O redirecionamento só acontece DEPOIS que a notificação se fecha.
+          navigate("/login");
+        },
+      });
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Ocorreu um erro.";
       setError(errorMessage);
