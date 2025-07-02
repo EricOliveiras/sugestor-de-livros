@@ -16,9 +16,6 @@ export const saveBookToList = async (c: Context<AppEnv>) => {
     const { googleBooksId, title, authors, synopsis, coverUrl } =
       await c.req.json();
 
-    // AQUI ESTÁ A CORREÇÃO:
-    // Se a sinopse não vier (for undefined, null ou uma string vazia),
-    // nós definimos um valor padrão para não quebrar o banco de dados.
     const synopsisOrDefault = synopsis || "Nenhuma sinopse disponível.";
 
     const book = await prisma.book.upsert({
