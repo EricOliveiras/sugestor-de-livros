@@ -16,17 +16,14 @@ export const registerUser = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   try {
     const { email, password, name } = await c.req.json();
-    console.log(`[REGISTER ATTEMPT] Tentando registrar com email: ${email}`);
 
     // Validação de entrada básica
     if (!email || !password || !name) {
-      console.log("[VALIDATION FAIL] Campos obrigatórios faltando.");
       return c.json({ message: "Nome, email e senha são obrigatórios." }, 400);
     }
 
     // Validação de senha
     if (password.length < 6) {
-      console.log("[VALIDATION FAIL] Senha muito curta.");
       return c.json(
         { message: "A senha deve ter pelo menos 6 caracteres." },
         400
@@ -44,9 +41,6 @@ export const registerUser = async (c: Context<AppEnv>) => {
     const emailDomain = email.split("@")[1];
 
     if (!allowedDomains.includes(emailDomain)) {
-      console.log(
-        `[VALIDATION FAIL] Domínio de email não permitido: ${emailDomain}`
-      );
       return c.json(
         {
           message:
@@ -59,13 +53,9 @@ export const registerUser = async (c: Context<AppEnv>) => {
     // Validação de usuário existente
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      console.log(`[VALIDATION FAIL] Email já existe: ${email}`);
       return c.json({ message: "Este email já está em uso." }, 409);
     }
 
-    console.log(
-      "[VALIDATION PASS] Todas as validações passaram. Criando usuário..."
-    );
     const hashedPassword = await hash(password, 10);
     const defaultAvatarUrl = `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(
       name || "User"
@@ -79,12 +69,10 @@ export const registerUser = async (c: Context<AppEnv>) => {
         avatarUrl: defaultAvatarUrl,
       },
     });
-    console.log(`[SUCCESS] Usuário criado com sucesso: ${user.id}`);
 
     const { password: _, ...userWithoutPassword } = user;
     return c.json(userWithoutPassword, 201);
   } catch (error) {
-    console.error("Erro fatal ao registrar usuário:", error);
     return c.json({ message: "Erro interno do servidor." }, 500);
   }
 };
@@ -114,7 +102,6 @@ export const loginUser = async (c: Context<AppEnv>) => {
     const { password: __, ...userWithoutPassword } = user;
     return c.json({ user: userWithoutPassword, token });
   } catch (error) {
-    console.error("Erro ao fazer login:", error);
     return c.json({ message: "Erro interno do servidor." }, 500);
   }
 };
