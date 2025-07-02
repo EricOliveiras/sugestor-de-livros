@@ -1,6 +1,6 @@
 import { Context } from "hono";
 
-// O tipo AppEnv agora reflete que teremos 'prisma' e 'userId' no contexto.
+// O tipo para o contexto, que nos diz que o middleware vai nos dar um 'userId'
 type AppEnv = {
   Variables: {
     prisma: any; // Usamos 'any' para simplicidade
@@ -11,17 +11,26 @@ type AppEnv = {
 // Função para SALVAR um livro na lista do usuário
 export const saveBookToList = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
-  // CORREÇÃO: Pegamos o userId diretamente do contexto
   const userId = c.get("userId");
-
   try {
     const { googleBooksId, title, authors, synopsis, coverUrl } =
       await c.req.json();
 
+    // AQUI ESTÁ A CORREÇÃO:
+    // Se a sinopse não vier (for undefined, null ou uma string vazia),
+    // nós definimos um valor padrão para não quebrar o banco de dados.
+    const synopsisOrDefault = synopsis || "Nenhuma sinopse disponível.";
+
     const book = await prisma.book.upsert({
       where: { googleBooksId },
-      update: { title, authors, synopsis, coverUrl },
-      create: { googleBooksId, title, authors, synopsis, coverUrl },
+      update: { title, authors, synopsis: synopsisOrDefault, coverUrl },
+      create: {
+        googleBooksId,
+        title,
+        authors,
+        synopsis: synopsisOrDefault,
+        coverUrl,
+      },
     });
 
     await prisma.user.update({
@@ -78,7 +87,9 @@ export const removeBookFromList = async (c: Context<AppEnv>) => {
   // CORREÇÃO: Pegamos o userId diretamente do contexto
   const userId = c.get("userId");
   const bookId = c.req.param("bookId");
-
+  if (!bookId) {
+    return c.json({ message: "ID do livro não fornecido." }, 400);
+  }
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -101,9 +112,11 @@ export const updateMyProfile = async (c: Context<AppEnv>) => {
   const prisma = c.get("prisma");
   // CORREÇÃO: Pegamos o userId diretamente do contexto
   const userId = c.get("userId");
-  const { name, avatarUrl } = await c.req.json();
-
+  if (!userId) {
+    return c.json({ message: "Usuário não autenticado." }, 401);
+  }
   try {
+    const { name, avatarUrl } = await c.req.json();
     const dataToUpdate: { name?: string; avatarUrl?: string } = {};
     if (name) dataToUpdate.name = name;
     if (avatarUrl) dataToUpdate.avatarUrl = avatarUrl;
